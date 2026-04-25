@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { COMMODITIES } from '../../data/commodities.js'
-import { SFX } from '../../game/sfx.js'
-import { cargoUsed } from '../../game/utils.js'
+import { COMMODITIES } from '../../../data/commodities.js'
+import { SFX } from '../../../game/sfx.js'
+import { cargoUsed } from '../../../game/utils.js'
 
-export function MarketTab({ state, dispatch, sys }) {
+export function MarketBlock({ state, dispatch, sys }) {
   const [qty, setQty] = useState({})
   const market = state.markets[state.currentSystem] || {}
   const used = cargoUsed(state.cargo)
@@ -66,59 +66,30 @@ export function MarketTab({ state, dispatch, sys }) {
                 )}
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ color: 'var(--text-bright)', fontSize: 14 }}>
-                  {mkt.price}cr
-                </div>
-                <div style={{ color: 'var(--text-faint)', fontSize: 10 }}>
-                  avail: {mkt.qty}
-                </div>
+                <div style={{ color: 'var(--text-bright)', fontSize: 14 }}>{mkt.price}cr</div>
+                <div style={{ color: 'var(--text-faint)', fontSize: 10 }}>avail: {mkt.qty}</div>
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <button
-                onClick={() =>
-                  setQty(q2 => ({ ...q2, [c.id]: Math.max(1, (q2[c.id] || 1) - 1) }))
-                }
+                onClick={() => setQty(q2 => ({ ...q2, [c.id]: Math.max(1, (q2[c.id] || 1) - 1) }))}
                 style={{
-                  width: 28,
-                  height: 28,
-                  background: '#0a1520',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text)',
-                  borderRadius: 4,
-                  cursor: 'pointer',
-                  fontSize: 14,
+                  width: 28, height: 28,
+                  background: '#0a1520', border: '1px solid var(--border)',
+                  color: 'var(--text)', borderRadius: 4, cursor: 'pointer', fontSize: 14,
                 }}
-              >
-                −
-              </button>
-              <span
-                style={{
-                  color: 'var(--text)',
-                  fontSize: 13,
-                  minWidth: 24,
-                  textAlign: 'center',
-                }}
-              >
+              >−</button>
+              <span style={{ color: 'var(--text)', fontSize: 13, minWidth: 24, textAlign: 'center' }}>
                 {q}
               </span>
               <button
-                onClick={() =>
-                  setQty(q2 => ({ ...q2, [c.id]: (q2[c.id] || 1) + 1 }))
-                }
+                onClick={() => setQty(q2 => ({ ...q2, [c.id]: (q2[c.id] || 1) + 1 }))}
                 style={{
-                  width: 28,
-                  height: 28,
-                  background: '#0a1520',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text)',
-                  borderRadius: 4,
-                  cursor: 'pointer',
-                  fontSize: 14,
+                  width: 28, height: 28,
+                  background: '#0a1520', border: '1px solid var(--border)',
+                  color: 'var(--text)', borderRadius: 4, cursor: 'pointer', fontSize: 14,
                 }}
-              >
-                +
-              </button>
+              >+</button>
               <button
                 onClick={() => {
                   if (buyDisabled) return
@@ -127,15 +98,11 @@ export function MarketTab({ state, dispatch, sys }) {
                 }}
                 disabled={buyDisabled}
                 style={{
-                  flex: 1,
-                  padding: '6px',
-                  background: '#0a2a0a',
-                  border: '1px solid #1a5a1a',
-                  color: 'var(--good)',
-                  borderRadius: 4,
+                  flex: 1, padding: '6px',
+                  background: '#0a2a0a', border: '1px solid #1a5a1a',
+                  color: 'var(--good)', borderRadius: 4,
                   cursor: buyDisabled ? 'default' : 'pointer',
-                  fontSize: 11,
-                  opacity: buyDisabled ? 0.4 : 1,
+                  fontSize: 11, opacity: buyDisabled ? 0.4 : 1,
                 }}
               >
                 BUY {mkt.price * q}cr
@@ -147,14 +114,10 @@ export function MarketTab({ state, dispatch, sys }) {
                     dispatch({ type: 'SELL', id: c.id, qty: Math.min(q, cargoQty) })
                   }}
                   style={{
-                    flex: 1,
-                    padding: '6px',
-                    background: '#2a1a0a',
-                    border: '1px solid #5a3a1a',
-                    color: '#d0a050',
-                    borderRadius: 4,
-                    cursor: 'pointer',
-                    fontSize: 11,
+                    flex: 1, padding: '6px',
+                    background: '#2a1a0a', border: '1px solid #5a3a1a',
+                    color: '#d0a050', borderRadius: 4,
+                    cursor: 'pointer', fontSize: 11,
                   }}
                 >
                   SELL ({cargoQty})

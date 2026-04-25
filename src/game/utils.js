@@ -67,3 +67,22 @@ export function canUnlockSystem(state, sys) {
   if (r.type === 'flag') return !!state.flags[r.flag]
   return false
 }
+
+export function canVisitLocation(state, loc) {
+  if (!loc?.unlockReq) return true
+  const r = loc.unlockReq
+  if (r.type === 'flag') return !!state.flags[r.flag]
+  if (r.type === 'npc_seen') return !!state.npcSeen?.[r.npc]
+  if (r.type === 'credits') return (state.creditsEarned || 0) >= r.amount
+  if (r.type === 'visited') return state.visitedSystems?.includes(r.system)
+  return false
+}
+
+export function visibleLocations(state, sys) {
+  return (sys.locations || []).filter(loc => !loc.hidden || canVisitLocation(state, loc))
+}
+
+export function getCurrentLocation(state, sys) {
+  if (!state.currentLocation) return null
+  return sys.locations?.find(l => l.id === state.currentLocation) || null
+}

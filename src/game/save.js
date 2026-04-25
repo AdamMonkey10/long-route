@@ -1,13 +1,27 @@
 export const SAVE_KEY = 'lr_save_v1'
-export const SAVE_VERSION = 1
+export const SAVE_VERSION = 2
+
+// Migrate older saves into the current shape. Returns the migrated state, or
+// null if the save is too old / unrecognised to recover.
+function migrate(parsed) {
+  if (!parsed || !parsed.state) return null
+
+  if (parsed.v === SAVE_VERSION) return parsed.state
+
+  if (parsed.v === 1) {
+    const next = { ...parsed.state }
+    // v1 → v2: locations replaced station tabs.
+    delete next.stationTab
+    if (next.currentLocation === undefined) next.currentLocation = null
+    return next
+  }
+
+  return null
+}
 
 export function saveGame(state) {
   try {
-    const payload = {
-      v: SAVE_VERSION,
-      ts: Date.now(),
-      state,
-    }
+    const payload = { v: SAVE_VERSION, ts: Date.now(), state }
     localStorage.setItem(SAVE_KEY, JSON.stringify(payload))
     return true
   } catch {
@@ -20,18 +34,16 @@ export function loadGame() {
     const raw = localStorage.getItem(SAVE_KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw)
-    if (!parsed || typeof parsed !== 'object') return null
-    if (parsed.v !== SAVE_VERSION) return null
-    return parsed
+    const state = migrate(parsed)
+    if (!state) return null
+    return { v: SAVE_VERSION, ts: parsed.ts || Date.now(), state }
   } catch {
     return null
   }
 }
 
 export function wipeSave() {
-  try {
-    localStorage.removeItem(SAVE_KEY)
-  } catch {}
+  try { localStorage.removeItem(SAVE_KEY) } catch {}
 }
 
 export function exportSave() {
@@ -43,12 +55,12 @@ export function exportSave() {
 export function importSave(json) {
   try {
     const parsed = JSON.parse(json)
-    if (!parsed || parsed.v !== SAVE_VERSION || !parsed.state) {
-      return { ok: false, error: 'Invalid or incompatible save file.' }
-    }
-    localStorage.setItem(SAVE_KEY, JSON.stringify(parsed))
-    return { ok: true, state: parsed.state }
-  } catch (e) {
+    const state = migrate(parsed)
+    if (!state) return { ok: false, error: 'Invalid or incompatible save file.' }
+    const payload = { v: SAVE_VERSION, ts: parsed.ts || Date.now(), state }
+    localStorage.setItem(SAVE_KEY, JSON.stringify(payload))
+    return { ok: true, state }
+  } catch {
     return { ok: false, error: 'Could not parse JSON.' }
   }
 }

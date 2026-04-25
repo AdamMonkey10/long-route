@@ -1,18 +1,18 @@
-import { UPGRADES } from '../../data/upgrades.js'
-import { SFX } from '../../game/sfx.js'
+import { UPGRADES } from '../../../data/upgrades.js'
+import { SFX } from '../../../game/sfx.js'
 
-export function ShipyardTab({ state, dispatch }) {
+export function ShipyardBlock({ state, dispatch }) {
   return (
     <div>
       <div
         style={{
-          color: 'var(--text-dim)',
-          fontSize: 12,
-          marginBottom: 16,
-          lineHeight: 1.5,
+          color: 'var(--text-faint)',
+          fontSize: 10,
+          letterSpacing: 2,
+          marginBottom: 10,
         }}
       >
-        The Persistent Delusion is functional. It could be more functional.
+        SHIPYARD CATALOGUE
       </div>
       {UPGRADES.map(upg => {
         const owned = state.upgrades.includes(upg.id)
@@ -39,12 +39,7 @@ export function ShipyardTab({ state, dispatch }) {
               }}
             >
               <div>
-                <span
-                  style={{
-                    color: owned ? 'var(--good)' : 'var(--text)',
-                    fontSize: 13,
-                  }}
-                >
+                <span style={{ color: owned ? 'var(--good)' : 'var(--text)', fontSize: 13 }}>
                   {owned ? '✓ ' : ''}
                   {upg.name}
                 </span>

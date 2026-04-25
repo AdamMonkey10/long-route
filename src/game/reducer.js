@@ -29,8 +29,10 @@ export function reducer(state, action) {
     case 'SET_NAME':
       return { ...state, playerName: action.name, view: 'map' }
 
-    case 'SET_TAB':
-      return { ...state, stationTab: action.tab }
+    case 'GO_LOCATION':
+      return { ...state, view: 'station', currentLocation: action.id }
+    case 'BACK_TO_CONCOURSE':
+      return { ...state, view: 'station', currentLocation: null }
 
     case 'NOTIFY':
       return { ...state, notification: action.msg }
@@ -40,7 +42,7 @@ export function reducer(state, action) {
     case 'GOTO_MAP':
       return { ...state, view: 'map', dialogue: null }
     case 'GOTO_STATION':
-      return { ...state, view: 'station', stationTab: action.tab || 'dock' }
+      return { ...state, view: 'station', currentLocation: action.location ?? null }
     case 'GOTO_LOG':
       return { ...state, view: 'log' }
     case 'GOTO_LEDGER':
@@ -85,10 +87,10 @@ export function reducer(state, action) {
         ...state,
         credits: state.credits - cost,
         currentSystem: action.to,
+        currentLocation: null,
         visitedSystems: visited,
         markets: newMarkets,
         view: combat ? 'combat' : event ? 'event' : 'station',
-        stationTab: 'dock',
         combat: combat || null,
         event: event || null,
         combatLog: combat ? [combat.log[0]] : [],
@@ -98,7 +100,7 @@ export function reducer(state, action) {
 
     case 'RESOLVE_EVENT': {
       const opt = action.option
-      let ns = { ...state, event: null, view: 'station', stationTab: 'dock' }
+      let ns = { ...state, event: null, view: 'station', currentLocation: null }
       const addLog = msg => {
         ns.gameLog = prepend(msg, ns.gameLog)
       }
@@ -439,7 +441,7 @@ export function reducer(state, action) {
           hull: workingHull,
           credits: state.credits + reward,
           view: 'station',
-          stationTab: 'dock',
+          currentLocation: null,
           gameLog: log,
         }
       }
@@ -457,7 +459,7 @@ export function reducer(state, action) {
           hull: 10,
           cargo: [],
           view: 'station',
-          stationTab: 'dock',
+          currentLocation: null,
           gameLog: log,
           notification: 'SHIP CRITICAL — All cargo lost. Pay for repairs immediately.',
         }
