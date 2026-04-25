@@ -1,0 +1,1654 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Long Route"><meta name="mobile-web-app-capable" content="yes"><meta name="theme-color" content="#010a14">
+<link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<title>The Long Route</title>
+<style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}html,body{height:100%;background:#010a14;overflow:hidden}#root{height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}input,button{font-family:'Space Mono',monospace;-webkit-appearance:none}button:active{opacity:.75;transition:opacity .1s}input:focus{outline:none}::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:#1a3a5a;border-radius:2px}@keyframes fadeIn{from{opacity:0}to{opacity:1}}</style>
+</head><body>
+<div id="root"><div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#4a6a80;font-family:monospace;font-size:13px;letter-spacing:3px">LOADING...</div></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel" data-presets="react">
+const {useState,useReducer,useCallback,useEffect,useRef} = React
+
+const SFX=(()=>{let ctx=null;const go=()=>{if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')ctx.resume();return ctx};function sweep(f1,f2,dur,vol,wave){vol=vol||.2;wave=wave||'sine';try{const c=go(),n=c.currentTime,o=c.createOscillator(),g=c.createGain();o.type=wave;o.frequency.setValueAtTime(f1,n);o.frequency.exponentialRampToValueAtTime(f2,n+dur);g.gain.setValueAtTime(0,n);g.gain.linearRampToValueAtTime(vol,n+.01);g.gain.exponentialRampToValueAtTime(.001,n+dur);o.connect(g);g.connect(c.destination);o.start(n);o.stop(n+dur+.05)}catch(e){}}function noise(dur,vol,freq){vol=vol||.15;freq=freq||800;try{const c=go(),n=c.currentTime,b=c.createBuffer(1,c.sampleRate*dur,c.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;const s=c.createBufferSource(),fi=c.createBiquadFilter(),g=c.createGain();fi.type='bandpass';fi.frequency.value=freq;fi.Q.value=.5;g.gain.setValueAtTime(vol,n);g.gain.exponentialRampToValueAtTime(.001,n+dur);s.buffer=b;s.connect(fi);fi.connect(g);g.connect(c.destination);s.start(n);s.stop(n+dur)}catch(e){}}return{jump(){sweep(80,600,.35,.3,'sawtooth');noise(.5,.2,200);setTimeout(()=>sweep(600,2000,.4,.12,'sine'),150)},arrive(){sweep(1200,300,.4,.25,'sine');setTimeout(()=>noise(.12,.2,400),80)},fire(){noise(.07,.3,1400);sweep(400,200,.1,.15,'square')},buy(){sweep(440,660,.09,.12,'sine');setTimeout(()=>sweep(660,880,.08,.1,'sine'),70)},sell(){sweep(880,660,.08,.1,'sine');setTimeout(()=>sweep(660,440,.09,.12,'sine'),70)},click(){sweep(900,700,.04,.07,'square')},victory(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>sweep(f,f*1.5,.18,.1,'sine'),i*80))},upgrade(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>sweep(f,f*1.4,.15,.1,'sine'),i*70))}}})()
+const SAVE_KEY='lr_v6'
+const saveGame=s=>{try{localStorage.setItem(SAVE_KEY,JSON.stringify(s))}catch(e){}}
+const loadGame=()=>{try{const r=localStorage.getItem(SAVE_KEY);return r?JSON.parse(r):null}catch(e){return null}}
+const wipeSave=()=>{try{localStorage.removeItem(SAVE_KEY)}catch(e){}}
+
+// ── COMMODITIES ──
+const COMMODITIES=[
+  {id:'food',name:'Foodstuffs',color:'#7ec850',base:28},
+  {id:'ore',name:'Raw Ore',color:'#c87840',base:45},
+  {id:'components',name:'Components',color:'#5090d0',base:75},
+  {id:'tech',name:'Technology',color:'#50d0c0',base:140},
+  {id:'luxury',name:'Luxury Goods',color:'#d0a050',base:190},
+  {id:'medical',name:'Medical Supplies',color:'#d05050',base:110},
+  {id:'contraband',name:'Grey Market Goods',color:'#9050d0',base:280},
+]
+
+// ── SYSTEMS ──
+const SYSTEMS={
+  portsmith:{id:'portsmith',name:'Portsmith Station',x:40,y:60,tier:1,locked:false,economy:'INDUSTRIAL',faction:'Combine',fuelCost:0,desc:"A grey orbital platform with the architectural ambition of a filing cabinet. Home to 40,000 people who have all decided they are here temporarily.",cheap:['components'],expensive:['food','ore'],connections:['haverlock','sump','bellhaven'],npcs:['grex','mara'],combatChance:0},
+  haverlock:{id:'haverlock',name:'Haverlock Prime',x:18,y:38,tier:1,locked:false,economy:'AGRICULTURAL',faction:'Independent',fuelCost:55,desc:"A world of tremendous agricultural productivity and equally tremendous tedium. The population have channelled their creative energy into competitive jam-making.",cheap:['food'],expensive:['tech','components','luxury'],connections:['portsmith','meridian','new_geneva','bellhaven'],npcs:['becker'],combatChance:0},
+  bellhaven:{id:'bellhaven',name:'Bellhaven',x:11,y:62,tier:1,locked:false,economy:'COLONIAL',faction:'Independent',fuelCost:50,desc:"A frontier colony that made the mistake of succeeding. The Combine sends inspectors, the inspectors send reports. The colonists have opinions about this.",cheap:['food','ore'],expensive:['tech','luxury','medical'],connections:['portsmith','haverlock','consortium'],npcs:['agatha'],combatChance:5},
+  sump:{id:'sump',name:'The Sump',x:66,y:28,tier:1,locked:false,economy:'MINING',faction:'Independent',fuelCost:65,desc:"An asteroid the size of a small moon being systematically hollowed out since 2089. Structural integrity reports are classified because the inspector got lost inside.",cheap:['ore'],expensive:['food','medical','luxury'],connections:['portsmith','vantage','iron_drift'],npcs:['duchess','smee'],hasBlackMarket:true,combatChance:15},
+  iron_drift:{id:'iron_drift',name:'Iron Drift',x:82,y:14,tier:1,locked:false,economy:'DEEP MINING',faction:'Independent',fuelCost:80,desc:"Three platforms bolted to an iron-nickel asteroid. The population of 8,000 regards sunlight as theoretical and fresh air as unnecessary.",cheap:['ore','components'],expensive:['food','luxury','medical'],connections:['sump','farside','kessel'],npcs:['okafor','kasey'],combatChance:20},
+  meridian:{id:'meridian',name:'Meridian Cross',x:46,y:44,tier:2,locked:false,economy:'TRADE HUB',faction:'Neutral',fuelCost:75,desc:"Everyone passes through Meridian Cross. Nobody stays long. The economy is built around people who need a drink and a room for one night.",cheap:['luxury'],expensive:['ore','food'],connections:['portsmith','haverlock','new_cascadia','new_geneva'],npcs:['otto','old_nav'],combatChance:10},
+  new_cascadia:{id:'new_cascadia',name:'New Cascadia',x:24,y:64,tier:2,locked:false,economy:'TECH HUB',faction:'Combine',fuelCost:85,desc:"The most prosperous system in the sector, a fact New Cascadians mention within thirty seconds, before asking about their craft distillery.",cheap:['tech','components'],expensive:['ore','food','medical'],connections:['haverlock','meridian','kessel','consortium'],npcs:['pellandra'],combatChance:0},
+  consortium:{id:'consortium',name:'The Consortium',x:8,y:50,tier:2,locked:false,economy:'CORPORATE',faction:'Combine',fuelCost:90,desc:"The Consortium is what happens when a trading company is given judicial powers and told to be efficient. It runs on time. Nobody asks how.",cheap:['tech','components'],expensive:['food','contraband','ore'],connections:['bellhaven','new_cascadia'],npcs:['chen','mirela'],combatChance:0},
+  new_geneva:{id:'new_geneva',name:'New Geneva',x:32,y:20,tier:2,locked:false,economy:'POLITICAL',faction:'Neutral',fuelCost:85,desc:"The sector's diplomatic hub. Every faction has an embassy and a face they wear inside it. The air is thick with politeness that means nobody trusts anyone.",cheap:['luxury','medical'],expensive:['ore','contraband'],connections:['haverlock','meridian','kessel','exodus'],npcs:['flyte','barker'],combatChance:0},
+  ashmore:{id:'ashmore',name:'Ashmore Relay',x:74,y:58,tier:2,locked:true,unlockReq:{type:'credits',amount:2500,label:'Earn 2,500 credits total'},economy:'COMMUNICATIONS',faction:'Neutral',fuelCost:95,desc:"A communications relay station on the edge of Combine space. Everything broadcast in this sector passes through Ashmore. The engineer who maintains it knows more than is comfortable.",cheap:['components'],expensive:['luxury','contraband'],connections:['vantage','cold_harbor','the_wreck'],npcs:['sable'],combatChance:10},
+  vantage:{id:'vantage',name:'Vantage Outpost',x:86,y:44,tier:2,locked:true,unlockReq:{type:'credits',amount:3000,label:'Earn 3,000 credits total'},economy:'MILITARY',faction:'Combine',fuelCost:100,desc:"A military station at the frontier of Combine space. The staff take their jobs extremely seriously and are suspicious of people who don't.",cheap:['components'],expensive:['food','contraband'],connections:['sump','meridian','ashmore'],npcs:['commander'],combatChance:20},
+  kessel:{id:'kessel',name:'Kessel Expanse',x:54,y:12,tier:3,locked:true,unlockReq:{type:'flag',flag:'edda_clue_3',label:'Find all three clues about Edda'},economy:'FRONTIER',faction:'None',fuelCost:120,desc:"The last registered position of Edda Vance, seven years ago. The station keeper doesn't ask questions. The locals don't either.",cheap:['ore','contraband'],expensive:['tech','medical','luxury'],connections:['new_cascadia','new_geneva','iron_drift'],npcs:['isha'],combatChance:30},
+  farside:{id:'farside',name:'Farside Station',x:92,y:24,tier:3,locked:true,unlockReq:{type:'flag',flag:'vantage_contact',label:'Make contact at Vantage Outpost'},economy:'DERELICT',faction:'None',fuelCost:115,desc:"A station that officially closed in 2058. It did not. The people here are not officially here. This arrangement suits everyone.",cheap:['ore','contraband'],expensive:['food','medical','tech'],connections:['iron_drift','vantage'],npcs:['ghost'],combatChance:35},
+  the_wreck:{id:'the_wreck',name:'The Wreck',x:60,y:76,tier:3,locked:true,unlockReq:{type:'flag',flag:'edda_clue_2',label:"Follow Mara's trail"},economy:'FREEPORT',faction:'Frontier',fuelCost:110,desc:"A decommissioned colony ship that never finished decommissioning. Four thousand people call it home. None using their real names.",cheap:['contraband','ore'],expensive:['medical','tech'],connections:['ashmore','cold_harbor'],npcs:['rook','motes'],combatChance:30},
+  cold_harbor:{id:'cold_harbor',name:'Cold Harbor',x:86,y:66,tier:3,locked:true,unlockReq:{type:'flag',flag:'vantage_contact',label:'Make contact at Vantage Outpost'},economy:'PIRATE HAVEN',faction:'Frontier',fuelCost:130,desc:"Lawless, dangerous, and refreshingly honest about both. Everyone here is very professional about things that are technically crimes.",cheap:['contraband','ore'],expensive:['medical','tech'],connections:['vantage','ashmore','the_wreck'],npcs:[],combatChance:40},
+  exodus:{id:'exodus',name:'Exodus Point',x:18,y:10,tier:4,locked:true,unlockReq:{type:'flag',flag:'truth_revealed',label:'Uncover the truth about the Frontier Wars'},economy:'SANCTUARY',faction:'Frontier',fuelCost:150,desc:"The furthest point on any registered chart. Beyond here the maps say nothing, which is to say there is more than the maps would like you to know.",cheap:['contraband','ore'],expensive:['medical','luxury'],connections:['new_geneva','haverlock'],npcs:['edda'],combatChance:15},
+}
+
+// ── NPCS ──
+const NPCS={
+  grex:{id:'grex',name:'Grex',title:'Dock Master',portrait:'grex',greeting:"Name. Ship registration. Purpose of visit. In that order.",tree:{
+    root:{text:"You bought the Persistent Delusion? From the Kelloway yard?\n\nPrevious owner: Edda Vance. She walked out of here seven years ago in a hurry. Owed me forty credits. I mention this not because I expect reimbursement, but because I want it on the record that I remember.",options:[
+      {text:"Who was Edda Vance?",go:'edda'},{text:"What's worth trading here?",go:'trade'},{text:"That'll be all.",go:null}]},
+    edda:{text:"Independent trader. Good reputation. She ran information: nav charts, data cores, for whoever paid. Careful. Very careful.\n\nThen she went quiet. Then she left the ship in impound and walked through that airlock. Never came back.",options:[
+      {text:"Did she say where she was going?",go:'edda_where',flag:'edda_clue_1',flagLabel:'🔍 Clue 1: Grex remembers'},
+      {text:"Who else knew her?",go:'edda_contacts'},{text:"Back to trading.",go:'trade'}]},
+    edda_where:{text:"Last thing she said: 'Don't let them impound the ship.' Then she left.\n\nThe Combine asked about her three weeks later. Two agents. Very polished. I gave them nothing — Edda was thorough. They left a card. I filed it in the recycling unit.",options:[
+      {text:"The Combine asked about her.",go:null},{text:"Who else might know?",go:'edda_contacts'}]},
+    edda_contacts:{text:"Mara Solis — she's over there — they traded information sometimes. And there's an old navigator at Meridian Cross called Vasquez. If you're trying to find her — which I'd advise against — that's where I'd start.",options:[
+      {text:"Why advise against it?",go:'warning'},{text:"Thanks, Grex.",go:null}]},
+    warning:{text:"Because the Combine asked about her. The Combine does not ask casual questions.\n\nI am a simple man, {name}. I find it useful to notice when things are hidden and choose not to look.",options:[{text:"I appreciate the advice.",go:null}]},
+    trade:{text:"Components are cheap here. Ore and food are scarce. Bellhaven does good food if you don't mind the inspection queue.",options:[{text:"Good to know.",go:null}]},
+  }},
+  mara:{id:'mara',name:'Mara Solis',title:'Independent Trader',portrait:'mara',greeting:"Oh! Sorry — I was watching the dock — nevermind. Can I help?",tree:{
+    root:{text:"Haverlock's in a drought year. Anyone carrying food there makes about forty percent above standard.\n\nI'm not going — my customs relationship with Haverlock is complicated. Slightly off-spec grain. Last season.",options:[
+      {text:"You knew Edda Vance?",go:'edda'},{text:"Other market tips?",go:'tips'},{text:"Thanks for the grain tip.",go:null}]},
+    edda:{text:"We traded information. She was careful. Very careful.\n\nWhich is why I noticed when she stopped being careful.",options:[
+      {text:"What do you mean?",go:'careless',flag:'edda_clue_2',flagLabel:"🔍 Clue 2: Mara's warning"},
+      {text:"Do you know where she went?",go:'where'}]},
+    careless:{text:"Six months before she disappeared, she started asking questions openly. About the Combine's licensing during the Frontier Wars.\n\nShe sent me a data core two weeks before she vanished. 'Keep it safe. Don't read it.' It's in a lockbox on The Sump — talk to someone called Smee. Tell him I sent you.",options:[
+      {text:"I'll find Smee.",go:null},{text:"What was she looking for?",go:'looking'}]},
+    looking:{text:"She didn't say. But she paid fifty credits for a fifteen-year-old shipping manifest. A week later, the Combine sent people asking the same questions.\n\nI told them: I just know about grain prices.",options:[{text:"The Combine again.",go:null}]},
+    where:{text:"Kessel Expanse. She was obsessed with it. Something about pre-war navigation records. I don't know more than that.",options:[{text:"Understood.",go:null}]},
+    tips:{text:"The Consortium buys components at premium — corporate projects. New Geneva pays well for medical. The Wreck takes anything at any price.",options:[{text:"Thanks.",go:null}]},
+  }},
+  duchess:{id:'duchess',name:'The Duchess',title:'Proprietor',portrait:'duchess',greeting:"You're not from here. I can tell because you look like you can see properly. What do you want?",tree:{
+    root:{text:"I don't deal in contraband. I deal in goods whose legal status is subject to ongoing philosophical debate between myself and various law enforcement agencies.",options:[
+      {text:"I'm looking for Smee.",go:'smee'},{text:"What's trading well here?",go:'trade'},{text:"Just browsing.",go:null}]},
+    smee:{text:"Bay 7, lower docks. He's not well — cave-in last month. What do you want with Smee?",options:[
+      {text:"Mara Solis sent me.",go:'mara_sent'},{text:"Just a message.",go:'vague'}]},
+    mara_sent:{text:"Mara. Right. Bay 7. And if whatever you're collecting causes me problems, I'll be very irritated. I manage irritation by charging significantly above market rate.",options:[{text:"Understood.",go:null}]},
+    vague:{text:"Bay 7. The Sump is small. 'Just a message' means I know the contents in twelve hours.",options:[{text:"Fair point.",go:null}]},
+    trade:{text:"Ore cheap. Food and medical premium. Real money: Kessel pays triple for anything not on the manifest. The Wreck buys everything, no questions.",options:[{text:"Thanks.",go:null}]},
+  }},
+  smee:{id:'smee',name:'Smee',title:'Miner (Injured)',portrait:'smee',greeting:"...who are you? If you're from management, leave. If you're a doctor, also leave — I can't pay.",tree:{
+    root:{text:"Not management. Fine. Go ahead.",options:[
+      {text:"Mara Solis sent me.",go:'mara_sent'},{text:"How are you holding up?",go:'health'},{text:"Wrong bay, sorry.",go:null}]},
+    mara_sent:{text:"Mara said someone might come.\n\n[Presses a data core into your hand]\n\nDon't open it on any Combine network. It's encrypted — Edda's own encryption. You'll need her key to read it. Last I heard, the key was somewhere in the Kessel Expanse.",options:[
+      {text:"Thank you. This matters.",go:'thanks',flag:'edda_clue_3',flagLabel:'🔍 Clue 3: The data core',giveItem:'data_core'},
+      {text:"What was Edda to you?",go:'relationship'}]},
+    thanks:{text:"Just get it somewhere it matters. Edda thought what she found was worth disappearing for.\n\nI hope she was right.",options:[{text:"I'll find out.",go:null}]},
+    relationship:{text:"Old friend. Same Belt colony. She got a ship. Got out. I got a very close personal relationship with a structural support beam.\n\nShe believed the truth mattered. I find that quality both admirable and operationally reckless.",options:[{text:"Take the data core. I'll find out.",go:'mara_sent'}]},
+    health:{text:"Two ribs. One kneecap. The optimism was gone before the cave-in.\n\nGot medical supplies? I'll trade information.",options:[
+      {text:"What kind of information?",go:'info'},{text:"No supplies right now.",go:null}]},
+    info:{text:"Three jump routes not on any Combine chart. Which dock inspectors can be paid to look elsewhere. And: Iron Drift has a listening post that reports to Vantage. Foreman Okafor doesn't know. Everyone else does.",options:[{text:"I'll come back with supplies.",go:null}]},
+  }},
+  otto:{id:'otto',name:'Otto',title:'Barkeep, Meridian Cross',portrait:'otto',greeting:"Sit down. What are you drinking. That was not a question.",tree:{
+    root:{text:"Everyone who comes through thinks they're passing through. Nobody is. Meridian Cross IS the destination — they just haven't admitted it yet.",options:[
+      {text:"Information about Edda Vance.",go:'edda'},{text:"Who's the old man in the corner?",go:'vasquez'},
+      {text:"Tell me about New Geneva.",go:'geneva'},{text:"Just the drink.",go:null}]},
+    edda:{text:"She drank here. Tipped well. She was after old Combine cargo manifests — Frontier Wars era.\n\nI pointed her at Vasquez. He keeps records the way other people keep grudges: obsessively and with full emotional investment.",options:[
+      {text:"Tell me about Vasquez.",go:'vasquez'},{text:"What was she looking for?",go:'specific'}]},
+    specific:{text:"She wouldn't say. Paid fifty credits for a fifteen-year-old shipping manifest. A week later, two polished Combine agents sat exactly where you're sitting.\n\nI told them: I just pour the drinks.",options:[{text:"Tell me about Vasquez.",go:'vasquez'}]},
+    vasquez:{text:"Former Combine navigator. Retired involuntarily — kept records of things they'd rather forget. Been here since, drinking steadily and annotating with increasingly hostile marginalia.\n\nHe'll talk if you feed him. Literally.",options:[{text:"I'll try that.",go:null}]},
+    geneva:{text:"New Geneva is where people go to look important without doing anything. Ambassador Flyte is the one to talk to — she knows where every body is buried, figuratively and possibly literally.\n\nShe doesn't talk to traders. Find a reason she'd want to.",options:[{text:"Thanks.",go:null}]},
+    trade:{text:"Meridian is the clearinghouse. Luxury goods sell well. We produce nothing except gossip, which I provide free of charge.",options:[{text:"Good to know.",go:null}]},
+  }},
+  old_nav:{id:'old_nav',name:'Vasquez',title:'Former Navigator',portrait:'old_nav',greeting:"...",tree:{
+    root:{text:"...",options:[
+      {text:"Otto says you might help. About Edda Vance.",go:'check_food'},{text:"Sorry — wrong person.",go:null}]},
+    check_food:{text:"Otto talks too much.\n\n[Studies you]\n\n...do you have food? Real food. Not station rations.",options:[
+      {text:"[Give 2 food] Here.",go:'with_food',requireCargo:'food',requireQty:2,costCargo:'food',costQty:2},
+      {text:"No, sorry.",go:'no_food'}]},
+    with_food:{text:"[Eats with complete dignity]\n\nEdda found an anomaly in Frontier Wars shipping records. Weapons-grade components shipped to Frontier Faction stations through Combine intermediaries. During the period the Combine claimed to be neutral.\n\nThey didn't just profit from the war. They armed both sides.",options:[
+      {text:"Is there proof?",go:'proof'},{text:"That would explain everything.",go:'conclusion'}]},
+    proof:{text:"She was looking for source records at the Kessel Expanse archive — originals, stored before the Combine shut it down.\n\nIf those records still exist, they're enough to collapse the Combine's legitimacy entirely. Which is why Edda disappeared.",options:[
+      {text:"I have her data core. Going to Kessel.",go:'resolve'},{text:"Where exactly?",go:'location'}]},
+    location:{text:"Navigation archive, coordinates 7-7-Alpha. Declared decommissioned in 2054. The keeper, a woman named Isha, was still running it ten years ago.",options:[{text:"Thank you.",go:null}]},
+    conclusion:{text:"It explains why they wanted her gone. Why they kept asking. And why, seven years later, it's still dangerous enough that they haven't stopped looking.",options:[{text:"I'm going to Kessel.",go:'resolve'}]},
+    resolve:{text:"[Nods slowly]\n\nBraver than I am. Or considerably more foolish.\n\nKessel archive. Keeper named Isha. If she trusts you, she'll have Edda's key.\n\nGood luck.",options:[{text:"Thank you.",go:null}]},
+    no_food:{text:"...[Turns away]\n\nCome back when you have something worth talking over.",options:[{text:"I will.",go:null}]},
+  }},
+  becker:{id:'becker',name:'Old Becker',title:'Farmer-Trader',portrait:'becker',greeting:"You're a trader? Perfect. I need forty crates off my hands before the inspector arrives.",tree:{
+    root:{text:"Drought year, but I hoarded last season's grain. Inspector calls it manipulation. I call it forward planning.\n\nFood cheap from me. Very expensive at Portsmith and The Sump.",options:[
+      {text:"What do you need in return?",go:'needs'},{text:"Other tips?",go:'tips'},{text:"I'll buy some food.",go:null}]},
+    needs:{text:"Tech components. My harvesting equipment is held together with ingenuity and strong language, and both are wearing thin.",options:[{text:"I'll see what I can do.",go:null}]},
+    tips:{text:"New Cascadia pays premium for organics. 'Reconnecting with nature' — expensive food and talking about it at dinner parties.\n\nAlso: the Consortium pays absurd rates for medical. Something going on inside there.",options:[{text:"Thanks.",go:null}]},
+  }},
+  agatha:{id:'agatha',name:'Agatha Sorn',title:'Retired Administrator',portrait:'agatha',greeting:"Sit down. I'll put the kettle on. The kettle's broken but the gesture matters.",tree:{
+    root:{text:"Thirty-one years in the Combine's administrative division. Do you know what that means? I know where the files are.\n\nNot the public files. The other ones.",options:[
+      {text:"What files?",go:'files'},{text:"What brings you out here?",go:'why'},{text:"What's worth trading from Bellhaven?",go:'trade'}]},
+    files:{text:"The Frontier Wars authorisation records. There's a filing system for logistics that shouldn't exist if the Combine was neutral. I didn't understand what I was looking at until much later.\n\nA trader came through asking the same questions, about four years after the war. I told her what I'd seen. She had a name — Edda Vance.",options:[
+      {text:"I'm looking for Edda too.",go:'edda'},{text:"What did you tell her?",go:'told'}]},
+    edda:{text:"Then you're asking the right questions. She was going after the source records at Kessel. Whether she got there — I don't know. She was careful.\n\nI'll tell you what I told her: the Consortium was the logistics arm. Secondary records, if they exist, are in Consortium archives. Talk to a woman called Mirela Voss. Tell her Agatha says 7741-C.",options:[{text:"7741-C. Thank you.",go:null}]},
+    told:{text:"That the weapons requisitions were authorised through a Consortium subsidiary. Filed under a supply contract number nobody was likely to look up.\n\nWhich is how bureaucracy works. Things aren't hidden. They're just misfiled.",options:[{text:"Thank you.",go:null}]},
+    why:{text:"Retirement. Fresh air. A garden I am systematically killing due to forty years of indoor living.\n\nAlso, Bellhaven is the only colony the Combine hasn't fully assimilated yet. It's nice to be somewhere things aren't entirely decided.",options:[{text:"Fair enough.",go:null}]},
+    trade:{text:"Food and ore in abundance. What we lack: everything else. Tech, medical, luxury — bring anything manufactured and colonists will pay generously.",options:[{text:"Good to know.",go:null}]},
+  }},
+  okafor:{id:'okafor',name:'Foreman Okafor',title:'Shift Foreman, Iron Drift',portrait:'okafor',greeting:"You're not here to work, which means you want something. Go ahead.",tree:{
+    root:{text:"Iron Drift runs on ore and pragmatism. We dig, we smelt, we ship. We don't ask where it goes, they don't ask how we get it out.",options:[
+      {text:"Trade opportunities?",go:'trade'},{text:"What's at Farside Station?",go:'farside'},{text:"Tell me about the listening post.",go:'listen'}]},
+    trade:{text:"Ore, obviously. Processed components. We're critically short on medical — three workers on restricted duty because we've got no analgesics.\n\nBring medical supplies and I'll pay above market. That's not negotiation, that's fact.",options:[{text:"I'll see what I can do.",go:null}]},
+    farside:{text:"Officially closed. Unofficially — none of my business. The people who stop there occasionally buy ore. They pay cash and don't want receipts. I find this professionally adequate.\n\nDon't tell Vantage I said that.",options:[{text:"Said what?",go:null}]},
+    listen:{text:"[Long pause]\n\n...where did you hear that?\n\nThere's equipment in section 7 I was told to classify as 'geological survey instruments.' It transmits. I don't know to where. I don't ask. The people who installed it had Combine credentials.\n\nI have 8,000 workers. I make pragmatic decisions.",options:[
+      {text:"Doesn't that bother you?",go:'bother'},{text:"I understand.",go:null}]},
+    bother:{text:"[Quietly]\n\nEvery single day. But Iron Drift needs the licensing. And licensing comes from the Combine.\n\nNow. Did you want to buy some ore?",options:[{text:"Yes. I did.",go:null}]},
+  }},
+  kasey:{id:'kasey',name:'Kasey',title:'Miner, Iron Drift',portrait:'kasey',greeting:"Oh hey! You're a trader? Actual trader? From outside?",tree:{
+    root:{text:"Sorry, it's just — I've been on-station for eleven months. The most exciting thing was a drill bit shattering. Nobody was hurt but it was genuinely exciting.\n\nDo you have any news? From anywhere?",options:[
+      {text:"Where would you like to start?",go:'news'},{text:"Tell me about The Wreck.",go:'wreck'},{text:"Any tips for a trader?",go:'trade'}]},
+    news:{text:"[Listens with complete intensity]\n\nThat's incredible. All of it.\n\nOkay — The Wreck is three days out by the back route. Rook runs the trading floor. Tell her Kasey says hello — she'll add a ten percent premium. We have an arrangement.",options:[{text:"What kind of arrangement?",go:'arrangement'}]},
+    arrangement:{text:"I find her buyers. She gives me a cut. Eleven months on Iron Drift, you get creative about income streams.\n\nAlso she's great. Absolute menace at cards. Play cards with her — it's a fantastic experience.",options:[{text:"I'll pass on the cards.",go:null}]},
+    wreck:{text:"Technically a decommissioned colony ship. Technically. It's been there so long it has its own culture, currency, and apparently very good noodles.\n\nThey operate outside Combine jurisdiction because technically nobody is there, technically. Everyone finds this arrangement satisfactory.",options:[{text:"Good to know.",go:null}]},
+    trade:{text:"Ore always flowing. Contraband makes best margins if you know Farside. For safe profits: medical supplies in, ore and components out. Very reliable. Very boring. I say that with love.",options:[{text:"Thanks.",go:null}]},
+  }},
+  chen:{id:'chen',name:'Director Chen',title:'Regional Director, The Consortium',portrait:'chen',greeting:"Welcome. The Consortium is always pleased to facilitate legitimate commerce.",tree:{
+    root:{text:"The Consortium provides infrastructure, licensing, logistics oversight, and dispute resolution.\n\nWe are, in short, the reason commerce functions. You're welcome.",options:[
+      {text:"What's the Consortium's role in the Frontier Wars?",go:'wars'},{text:"What work is available?",go:'work'},{text:"What's worth trading here?",go:'trade'}]},
+    wars:{text:"[Smile doesn't shift]\n\nThe Consortium provided logistical coordination to both humanitarian and commercial operations during that difficult period.\n\nIs there something specific you're looking for?",options:[
+      {text:"Weapons contracts. Manifests. 2051 to 2053.",go:'manifests'},{text:"Never mind.",go:null}]},
+    manifests:{text:"[Pause of exactly two seconds]\n\nI'm not sure I understand the question. If you have concerns about historical procurement, the Combine's oversight committee is the appropriate channel.\n\nI'd strongly suggest that channel.",options:[
+      {text:"That sounds like a threat.",go:'threat'},{text:"Of course. Thank you.",go:null}]},
+    threat:{text:"It sounds like helpful administrative guidance. The Consortium is always helpful.\n\nSafe travels, Captain. We'll be watching.",options:[{text:"I'll bet you will.",go:null}]},
+    work:{text:"Standard cargo contracts. Tech output to inner systems. Competitive rates, reliable payment, no complications.\n\nAssuming you keep your questions similarly uncomplicated.",options:[{text:"Understood.",go:null}]},
+    trade:{text:"Technology and components are our primary exports. We buy raw materials and food. Standard rates. The Consortium doesn't negotiate.",options:[{text:"I'll check the market.",go:null}]},
+  }},
+  mirela:{id:'mirela',name:'Mirela Voss',title:'Consortium Archivist',portrait:'mirela',greeting:"I'm — sorry, I can't really talk here. Are you — did someone send you?",tree:{
+    root:{text:"If Agatha sent you, say the number.",options:[
+      {text:"7741-C.",go:'agatha_sent'},{text:"Nobody sent me.",go:'no_send'}]},
+    agatha_sent:{text:"[Exhales]\n\nOkay. Good. I've been here twelve years and I've been looking for a reason to leave for eleven of them.\n\nI can get you the secondary manifests — the ones showing the Consortium's actual role in 2051 to 2053. Not the filed versions. The real ones. But I need something first.",options:[
+      {text:"Name it.",go:'needs'},{text:"How do you know I can be trusted?",go:'trust'}]},
+    needs:{text:"Medical supplies. For me. I have a condition the Consortium's health plan doesn't cover because they classified it as 'preexisting.'\n\nBring me a six-month supply and I'll copy the 7741-C files. You'll understand everything.",options:[
+      {text:"[Deliver medical supplies]",go:'delivered',requireCargo:'medical',requireQty:3,costCargo:'medical',costQty:3,flag:'consortium_files',flagLabel:'📁 Consortium records obtained'},
+      {text:"I'll get back to you.",go:null}]},
+    delivered:{text:"[Takes the supplies]\n\nThank you. You have no idea.\n\n[Presses a data chip into your hand]\n\nThe 7741-C files. Every weapons contract, every shipping manifest, every authorisation signature. The Consortium was the mechanism. The Combine was the author. It's all there.\n\nI'll be on the next ship to Bellhaven. Don't come back here.",options:[{text:"Good luck.",go:null}]},
+    trust:{text:"You don't. And I don't know if I can trust you. But I've been sitting on these files for three years and nobody came looking.\n\nYou came looking. That's enough.",options:[{text:"What do you need?",go:'needs'}]},
+    no_send:{text:"I'm sorry — wrong person.\n\n[Turns away, clearly disappointed]",options:[{text:"Wait — Agatha sent me.",go:'agatha_sent'},{text:"No problem.",go:null}]},
+  }},
+  flyte:{id:'flyte',name:'Ambassador Flyte',title:'Senior Diplomat, New Geneva',portrait:'flyte',greeting:"A trader. How refreshing. We mostly get politicians. At least you're honest about what you want.",tree:{
+    root:{text:"New Geneva exists because everyone needs somewhere to pretend to cooperate. I've been facilitating this pretense for twenty-three years.\n\nWhat brings an independent trader to the diplomatic quarter?",options:[
+      {text:"I'm investigating the Frontier Wars.",go:'wars'},{text:"What's the trade situation?",go:'trade'},{text:"Tell me about the political landscape.",go:'politics'}]},
+    wars:{text:"[Sets down her glass very precisely]\n\nThe official position: they arose from resource competition and factional tensions.\n\nThe unofficial position — which I hold in my personal capacity, meaning I'll deny this conversation — is that they were arranged. I have no proof. I have, however, been a diplomat for twenty-three years, and arranged things have a particular texture.",options:[
+      {text:"I'm gathering proof. Edda Vance.",go:'edda'},{text:"Who would benefit?",go:'benefit'}]},
+    edda:{text:"Vance came through here four years ago. Very thorough. I told her about a Consortium subsidiary called Threshold Logistics — she didn't know. Threshold was dissolved in 2054. Records went to Consortium secure archive, Level Seven. Mirela Voss is the archivist.\n\nAlso: talk to Barker Ness. He's a journalist. He knows what to do with what you find.",options:[{text:"Thank you, Ambassador.",go:null}]},
+    benefit:{text:"Who benefits from twelve years of jump gate fee revenue? Who now controls every transit point in the sector?\n\nI leave that as an exercise for the reader.",options:[{text:"The Combine.",go:null}]},
+    politics:{text:"The Combine controls the infrastructure. The independents control the resentment. The Frontier Faction controls the parts of space nobody else wants — which turns out to be strategically significant.\n\nNew Geneva controls the conversation about all of this. We consider it a fair trade.",options:[{text:"What's your actual position?",go:null}]},
+    trade:{text:"Medical and luxury goods sell well here — diplomats maintain standards. We export very little. The primary commodity in New Geneva is information, and that doesn't fit on your cargo manifest.",options:[{text:"Understood.",go:null}]},
+  }},
+  barker:{id:'barker',name:'Barker Ness',title:'Journalist',portrait:'barker',greeting:"You've got the look of someone who knows something. Sit down.",tree:{
+    root:{text:"Barker Ness. Independent journalist, currently banned from six Combine-controlled systems, which I consider a professional achievement.\n\nI've been writing about the Frontier Wars for four years. I have a lot of pieces. I'm missing the centre.",options:[
+      {text:"What are you missing?",go:'missing'},{text:"What do you know?",go:'knows'},{text:"I might have what you need.",go:'have'}]},
+    missing:{text:"Authenticated source documents. Combine records from 2051 to 2053. I have testimonies, manifests, two former Combine employees on background.\n\nNone of it publishable without primary documents. They can say it's fabricated.",options:[
+      {text:"I'm working on getting those.",go:'working'},{text:"What happens when you publish?",go:'publish'}]},
+    working:{text:"Then we should keep in touch.\n\nIf you get authenticated records — especially anything with Combine executive signatures — bring them here first. Don't give them to any official body.\n\nGive them to me. I'll make sure they can't be buried.",options:[{text:"How do I know you'll actually publish?",go:'trust'}]},
+    trust:{text:"Because I'm banned from six systems and I'm still here. If I were going to drop it, I'd have stopped three years and two death threats ago.\n\nAlso I'm a journalist. Constitutionally incapable of sitting on a good story.",options:[{text:"Fair enough.",go:null}]},
+    knows:{text:"The Combine licensed both sides' weapons procurement through Threshold Logistics. Subsidiary dissolved immediately after the war. Records transferred to Combine-controlled archives.\n\nI know a former navigator at Meridian Cross with the routing data. An archivist at the Consortium with financial records. I just can't get anyone on the record.",options:[{text:"I've talked to both of them.",go:'impressed'}]},
+    impressed:{text:"[Long pause]\n\nThen you're further along than I am. What are you planning to do with what you find?",options:[
+      {text:"Bring it to you.",go:'bring'},{text:"Still working that out.",go:null}]},
+    bring:{text:"Good. That's the right answer.\n\nIf you get the Kessel records and Consortium files, bring them here. I can verify, authenticate, and publish within forty-eight hours. Once it's published, the Combine can't unring that bell.",options:[{text:"I'll be back.",go:null}]},
+    have:{text:"[Leans forward]\n\nTell me.",options:[{text:"Not yet. Still gathering.",go:null},{text:"I have consortium files.",go:'knows'}]},
+    publish:{text:"[Quietly]\n\nEverything changes. Jump gate fees get challenged. Combine legitimacy gets challenged. Frontier Faction gets vindicated. Thirteen years of treaties built on a lie have to be renegotiated.\n\nIt'll be a very loud few years. Worth it.",options:[{text:"Good.",go:null}]},
+  }},
+  pellandra:{id:'pellandra',name:'Commissioner Pellandra',title:'Combine Trade Officer',portrait:'pellandra',greeting:"Your ship is unusual. Is it registered? I'll need to see your papers.",tree:{
+    root:{text:"The Persistent Delusion. Previously registered to one Edda Vance. Outstanding administrative queries against that registration.",options:[
+      {text:"What kind of queries?",go:'queries'},{text:"She's been gone seven years.",go:'gone'},{text:"Any legitimate work?",go:'work'}]},
+    queries:{text:"Administrative. As I said.\n\n[Long pause]\n\nYou might do well to stick to established routes. Traders who operate in stable, monitored lanes tend to have very long and uneventful careers.",options:[
+      {text:"That sounds like a suggestion.",go:'suggestion'},{text:"I appreciate the advice.",go:null}]},
+    suggestion:{text:"A friendly one. The Combine is not an adversary to independent traders — we're a framework. Frameworks are comfortable. Comfortable is preferable to the alternative.",options:[{text:"Understood.",go:null}]},
+    gone:{text:"[Smiles slightly]\n\nPaperwork doesn't disappear because people do. Our memory is very long.\n\nSomething to keep in mind.",options:[{text:"I'll remember that.",go:null}]},
+    work:{text:"Cargo runs. Standard rates. Nothing complicated. If complicated things appeal to you, I'd suggest they appeal less.",options:[{text:"I'll pass.",go:null}]},
+  }},
+  commander:{id:'commander',name:'Commander Yells',title:'Station Commander, Vantage',portrait:'commander',greeting:"State your business. Quickly.",tree:{
+    root:{text:"An independent trader at a military outpost. Very confident or very lost.",options:[
+      {text:"Trading. Looking for opportunities.",go:'trade'},
+      {text:"I've heard about Cold Harbor.",go:'cold_harbor',flag:'vantage_contact',flagLabel:'⚠️ Vantage contact made'},
+      {text:"Just passing through.",go:null}]},
+    trade:{text:"We take ore and components. Standard rate. Contraband on the manifest — I'd know before you landed.",options:[
+      {text:"Noted.",go:null},
+      {text:"What do you know about Cold Harbor?",go:'cold_harbor',flag:'vantage_contact',flagLabel:'⚠️ Vantage contact made'}]},
+    cold_harbor:{text:"Cold Harbor is beyond our jurisdiction. It exists because it's not worth the ships to clear it out. If you're going — don't mention Vantage.\n\nThat's all I'll say.",options:[{text:"Fair enough.",go:null}]},
+  }},
+  sable:{id:'sable',name:'Sable',title:'Relay Engineer, Ashmore',portrait:'sable',greeting:"You're not scheduled. Nothing from this direction is scheduled. How did you get the approach vector?",tree:{
+    root:{text:"Ashmore Relay is supposed to be automated. I'm supposed to be maintenance. What I actually am is the only person who knows that everything transmitted in this sector passes through my equipment.",options:[
+      {text:"I'm a trader. Looking for a port.",go:'trader'},{text:"What do you hear on those transmissions?",go:'transmissions'},{text:"Anything to trade?",go:'trade'}]},
+    transmissions:{text:"[Long pause]\n\nI'm not supposed to answer that. But the encryption on certain traffic has a signature I recognise — Combine Executive level. And some of it is recent. It includes a ship name I've now heard twice.\n\nPersistent Delusion.",options:[
+      {text:"They know I'm here.",go:'known'},{text:"What are they saying?",go:'content'}]},
+    known:{text:"They know you exist. The content is encrypted above my clearance, but the routing is clear — going to Combine Central, not any regional office.\n\nWhatever you're doing, it's attracting attention at the top.",options:[{text:"Good to know.",go:null}]},
+    content:{text:"I can't decrypt it. But traffic spiked when you entered the sector, and again when you visited New Geneva. There's a standing watch on any traffic mentioning Edda Vance.\n\nSomeone senior is tracking this personally.",options:[{text:"Thank you for telling me.",go:'why_tell'}]},
+    why_tell:{text:"Because I've been sitting on this relay for six years and I'd like to think I still have capacity for choosing whose side I'm on.\n\nAlso I'm deeply bored. Don't discount that.",options:[{text:"Fair enough.",go:null}]},
+    trader:{text:"There's a market. Modest. Mostly Vantage supply runs.\n\nIf you want a quiet port that nobody is actively monitoring — which might be useful — Ashmore is about as quiet as it gets.",options:[{text:"That's exactly what I needed.",go:null}]},
+    trade:{text:"Components in quantity — everything that runs the relay. Food and medical I'd pay above rate for. It's just me out here.\n\nI'd also trade information. I have a lot of it.",options:[{text:"Tell me about the transmissions.",go:'transmissions'}]},
+  }},
+  ghost:{id:'ghost',name:'Ghost',title:'Information Broker, Farside',portrait:'ghost',greeting:"I was told to expect you. I wasn't told by whom. That's usually how it works.",tree:{
+    root:{text:"Farside has no official population. I am therefore not here and you are not speaking to me. This conversation cannot be logged because it isn't happening.\n\nWhat can the absence of information do for your absence here?",options:[
+      {text:"I'm looking for Edda Vance.",go:'edda'},{text:"What can you tell me about the Combine?",go:'combine'},{text:"What's trading here?",go:'trade'}]},
+    edda:{text:"Vance. Yes. She used Farside as a waypoint seven years ago. Left a message — not for me, but I read it anyway; professional instinct.\n\nThe message said: 'If anyone comes looking, tell them Cold Harbor. Tell them ask for no one. They'll know what that means.'",options:[
+      {text:"Ask for no one.",go:'no_one'},{text:"She was heading to Cold Harbor?",go:'cold_harbor'}]},
+    no_one:{text:"Yes. Cold Harbor. There's a contact there who goes by no name. Operates through intermediaries. Has done so since the war.\n\nEdda trusted this contact completely. That's notable because Edda didn't trust anyone completely.",options:[{text:"Thank you.",go:null}]},
+    cold_harbor:{text:"That was the destination. Cold Harbor is the only place in this sector the Combine hasn't put eyes on. Which makes it the only place she could actually be safe.",options:[{text:"Then that's where I'm going.",go:null}]},
+    combine:{text:"The Combine has listening posts at Iron Drift and two other locations I won't specify. Standing surveillance on fourteen independent traders, including you, as of three weeks ago.\n\nThey're watching Kessel Expanse very carefully. Someone went there recently and they noticed.",options:[{text:"That was probably me.",go:null}]},
+    trade:{text:"Farside trades in things that don't officially exist. If that's your market, everything's available at a premium.\n\nConventionally: ore and not much else.",options:[{text:"I'll look at the market.",go:null}]},
+  }},
+  rook:{id:'rook',name:'Rook',title:'Trading Floor, The Wreck',portrait:'rook',greeting:"Come in! Sit down! What have you got and what do you want for it?",tree:{
+    root:{text:"The Wreck doesn't discriminate on origin, legality, or provenance. We buy things. We sell things. Very few questions.\n\nKasey sends people sometimes. If you know Kasey, ten percent on the buy rate.",options:[
+      {text:"Kasey says hello.",go:'kasey_friend'},{text:"What are you buying?",go:'buying'},{text:"What do you know about Cold Harbor?",go:'cold_harbor'}]},
+    kasey_friend:{text:"Excellent person. Eleven months on Iron Drift and still finding ways to be useful. Respect that enormously.\n\nTen percent on anything you sell me today. I keep my word — competitive advantage in this business.",options:[{text:"What are you buying?",go:'buying'}]},
+    buying:{text:"Everything. Honestly, everything. Contraband, ore, components, luxury, tech, medical — four thousand people who need all of it.\n\nWe pay above standard on medical right now. Short on the good stuff.",options:[{text:"I can work with that.",go:null}]},
+    cold_harbor:{text:"Cold Harbor is the serious one. The Wreck is functional lawlessness. Cold Harbor is principled lawlessness. There's a distinction.\n\nThere's a contact there — nobody's ever seen them directly. Handles significant things. If you're going for a reason, say you're looking for an old ship. They'll know what you mean.",options:[{text:"An old ship.",go:null}]},
+  }},
+  motes:{id:'motes',name:'Captain Motes',title:'Retired Privateer',portrait:'motes',greeting:"You're new. Don't get used to it — The Wreck changes people. Usually for the better.",tree:{
+    root:{text:"I ran a privateer operation for fifteen years. Then the Frontier Wars ended and I didn't need to run anymore. Now I live on a decommissioned colony ship and I grow herbs. The universe is strange.",options:[
+      {text:"Privateer for whom?",go:'privateer'},{text:"What do you know about the Frontier Wars?",go:'wars'},{text:"Advice for a trader?",go:'advice'}]},
+    privateer:{text:"For whoever paid. Frontier Faction, mostly. Weapon interdiction — we stopped Combine supply convoys. Or tried to.\n\nThe trouble was they had more convoys than anyone expected. The resupply lines made no tactical sense unless you were shipping to both sides.",options:[
+      {text:"The Combine was supplying the Frontier Faction?",go:'supplying'},{text:"Did you ever meet Edda Vance?",go:'edda'}]},
+    supplying:{text:"I didn't figure it out until after. Seven years of thinking about it.\n\nThey were supplying us with enough to keep us going. Not enough to win. Every time we got close to a decisive engagement, we'd be suddenly short on something critical. And the Combine would offer a 'humanitarian' ceasefire.\n\nThe war lasted thirteen years because they needed it to.",options:[{text:"To justify the jump gate licensing.",go:null}]},
+    edda:{text:"Once. She came to The Wreck about eight years ago. Asked me everything I just told you.\n\nShe had a theory. I had a story. We traded. She went to Kessel. I heard nothing after — until rumours started that she'd found something, that the Combine was looking, that she was alive and hiding.\n\nI hoped she made it.",options:[{text:"I think she did.",go:null}]},
+    wars:{text:"I ran interdiction for the Frontier Faction during the hot years. What I saw never added up until much later: we were always just barely losing. Like something was calibrating us.",options:[{text:"Tell me more.",go:'supplying'}]},
+    advice:{text:"Don't be predictable. Vary your routes. Combine surveillance has patterns and those patterns have gaps.\n\nAlso: The Wreck pays above market on almost everything.",options:[{text:"Good advice.",go:null}]},
+  }},
+  isha:{id:'isha',name:'Keeper Isha',title:'Archive Keeper, Kessel',portrait:'isha',greeting:"We're not open. We're never open. How did you get here?",tree:{
+    root:{text:"The archive is officially decommissioned. Has been for twenty years. I keep it running because the records are important and someone has to.\n\nWho sent you?",options:[
+      {text:"Nobody. I'm following Edda Vance's trail.",go:'edda',requireFlag:'edda_clue_3'},
+      {text:"I'm just a trader.",go:'just_trader'}]},
+    edda:{text:"...\n\n[A long silence]\n\nEdda is alive. I shouldn't tell you that. I'm telling you anyway because you're here, which means you've been thorough.\n\nShe left her decryption key with me. Said someone would come. Said they'd know about the data core.\n\nDo you have it?",options:[
+      {text:"[Show data core] Yes.",go:'has_core',requireFlag:'has_data_core',flag:'decryption_complete',flagLabel:'🔓 Data core decrypted'},
+      {text:"I'm still trying to get it.",go:'no_core'}]},
+    has_core:{text:"[Inserts the key]\n\nThe data core opens.\n\nCombine shipping manifests, 2051 to 2053. Weapons components, both sides. Authenticated, timestamped, unforgeable.\n\nThe Combine manufactured the Frontier Wars. Fifteen years of conflict to justify claiming control of every jump gate in the sector. The proof has been sitting here, waiting.\n\nEdda is at Cold Harbor. She's been waiting too.",options:[
+      {text:"I need to get to Cold Harbor.",go:null,flag:'truth_revealed',flagLabel:'📡 The truth is known'}]},
+    no_core:{text:"Not done yet. The core is somewhere in The Sump — Edda left it with a contact there.\n\nI'll be here. The archive will be here. We've been here for twenty years. A little longer won't matter.",options:[{text:"I'll be back.",go:null}]},
+    just_trader:{text:"Then you're in the wrong system. The Kessel Expanse hasn't been on established trade routes for twenty years.\n\nLeave the same way you came.",options:[{text:"I'll do that.",go:null}]},
+  }},
+  edda:{id:'edda',name:'Edda Vance',title:'The Reason You Are Here',portrait:'edda',greeting:"...you found me. I wasn't sure anyone would.",tree:{
+    root:{text:"Seven years. Seven years hiding at the end of the sector, in a place the Combine can't reach, waiting for the proof to find its way to someone who could use it.\n\nAnd here you are. With my ship.",options:[
+      {text:"Here I am. With your ship.",go:'ship'},{text:"What happens now?",go:'now'},{text:"Are you all right?",go:'alright'}]},
+    ship:{text:"[Small smile]\n\nI sold it on purpose. The forwarding address was specific to a type: someone thorough enough to trace it back.\n\nI needed someone who would ask questions. Not someone I chose — someone who chose themselves, by being the kind of person who asks questions about a ship with a history.\n\nYou were the right person.",options:[{text:"What happens now?",go:'now'}]},
+    now:{text:"That depends on what you have. If you have the data core, and the Consortium files, and Barker Ness at New Geneva — it happens now. We transmit everything simultaneously to every independent news outlet in the sector.\n\nThe Combine can't silence them all. Enough will get through.\n\nAfter that — it gets complicated. But complicated is better than buried.",options:[
+      {text:"[Transmit everything]",go:'publish',requireFlag:'consortium_files'},
+      {text:"I still need the Consortium files.",go:'files_needed'}]},
+    publish:{text:"[You transmit everything — data core, Consortium manifests, Vasquez's testimony, Motes' account, all of it — simultaneously, to thirty-two outlets across the sector]\n\nEdda watches the transmission queue run down.\n\n'Thirteen years,' she says. 'Thirteen years of war, and then seven years of silence. That's over now.'\n\nShe looks out at the stars for a long moment.\n\n'Thank you. Take the ship back. You've earned it.'\n\nOutside, the sector has just become considerably louder.",options:[
+      {text:"The Long Route. Complete.",go:null,flag:'game_complete',flagLabel:'✨ The Long Route — Completed'}]},
+    files_needed:{text:"Get the Consortium files. Talk to Mirela Voss at the Consortium archive — mention Agatha Sorn, mention 7741-C. She's been waiting.\n\nCome back when you have them. I've waited seven years. A little longer is fine.",options:[{text:"I'll be back.",go:null}]},
+    alright:{text:"[Considers this seriously]\n\nYes. Surprisingly. Hiding is not a comfortable life, but it's a life, and there are worse things than being alive and invisible while you wait for the world to catch up.\n\nI got very good at cards. The people here don't ask questions.\n\nAnd now you're here, which means the waiting is over. What do you have?",options:[{text:"Everything. Let's finish this.",go:'now'}]},
+  }},
+}
+
+// ── ENEMIES + EVENTS + UPGRADES ──
+const ENEMIES=[
+  {id:'pirate',name:'Pirate Skiff',maxHull:40,damage:14,credits:150,pattern:['attack','attack','evade','attack'],
+    intro:"A battered skiff drops out of nowhere. The comm crackles: 'All cargo or all hull. Your call.'"},
+  {id:'patrol',name:'Combine Patrol Cutter',maxHull:65,damage:18,credits:0,pattern:['scan','attack','attack','defend','attack'],
+    intro:"A Combine cutter locks on. 'Persistent Delusion, heave to for inspection.' Your manifest is not entirely clean."},
+  {id:'hunter',name:'Unmarked Hunter',maxHull:85,damage:22,credits:300,pattern:['attack','charge','heavy_attack','evade','attack'],
+    intro:"An unmarked ship has been following you for two systems. Now it's not following. It's attacking."},
+  {id:'wing',name:'Pirate Wing',maxHull:55,damage:16,credits:220,pattern:['attack','attack','evade','attack','attack'],
+    intro:"Two ships. Working together. One draws your fire while the other lines up. You've seen this before. Doesn't help."},
+  {id:'combine_frigate',name:'Combine Frigate',maxHull:120,damage:24,credits:0,pattern:['scan','scan','attack','defend','attack','attack','heavy_attack'],
+    intro:"A full Combine frigate. This is not a customs check. This is a warship and it has you in its targeting solution."},
+  {id:'frontier_raider',name:'Frontier Raider',maxHull:70,damage:19,credits:250,pattern:['attack','charge','evade','heavy_attack','attack'],
+    intro:"A Frontier Faction raider — old war hardware, well maintained. The pilot knows what they're doing. Clear immediately."},
+]
+
+const EVENTS=[
+  {id:'debris',text:"Your nav system flags a debris field — the remnants of something that used to be a ship and is now in the process of being everywhere simultaneously.",options:[
+    {text:"Navigate carefully (risk 10 hull)",type:'hull',value:-10,msg:"You pick through the debris. Your shields take the difference."},
+    {text:"Go around (cost 50cr)",type:'credits',value:-50,msg:"The long way round. Safe. Expensive."},
+  ]},
+  {id:'distress',text:"A distress signal. Weak, old, cycling. Could be genuine. Could be a trap. The odds are roughly even, which is to say the odds are not good.",options:[
+    {text:"Investigate (gamble)",type:'gamble',win:{credits:200,msg:"An automated cargo pod, drifting. 200cr salvage."},lose:{hull:-15,msg:"A trap. You take fire before breaking free."}},
+    {text:"Log and move on",type:'nothing',msg:"You log it and continue. Probably fine."},
+  ]},
+  {id:'checkpoint',text:"A Combine checkpoint. Not on your charts. They've set it up since the last time anyone updated those charts, which was evidently a while ago.",options:[
+    {text:"Comply — let them check",type:'nothing',msg:"They wave you through with the energy of people who've been standing in space for eight hours."},
+    {text:"Transmit doctored manifest (gamble)",type:'gamble',win:{msg:"They buy it. You breathe again."},lose:{credits:-200,msg:"200cr fine. They let you go, which you'd call a win."}},
+  ]},
+  {id:'anomaly',text:"Your nav system throws an error: coordinates that don't exist in the Combine database. An unlisted system. It's there on your instruments but not on any map.",options:[
+    {text:"Log the anomaly",type:'flag',flag:'anomaly_logged',msg:"You log the coordinates. Could be useful."},
+    {text:"Ignore it",type:'nothing',msg:"You continue on your registered course."},
+  ]},
+  {id:'fault',text:"The port engine makes a sound that isn't in any manual. This is less reassuring than it sounds, as the manual covers a remarkable range of sounds.",options:[
+    {text:"Emergency repair (100cr)",type:'pay',value:100,msg:"Fixed. Probably. The sound stops."},
+    {text:"Limp on and hope",type:'hull',value:-20,msg:"It holds. The sound gets worse."},
+  ]},
+  {id:'broker',text:"A small vessel hails you. Information broker — they want food. In space, everyone needs food eventually.",options:[
+    {text:"Trade 2 food for market intel",type:'info_trade',need:'food',qty:2,msg:"A solid tip about nearby prices. The broker seems satisfied."},
+    {text:"Decline and continue",type:'nothing',msg:"They drift off."},
+  ]},
+  {id:'derelict',text:"A derelict freighter, running dark. Hull intact, no life signs, cargo door open. Could be salvage. Could be a very obvious trap.",options:[
+    {text:"Board and salvage (gamble)",type:'gamble',win:{credits:350,msg:"Cargo hold half-full. 350cr salvageable. The trap, if there was one, was for someone else."},lose:{hull:-25,msg:"Automated defence system. Very old, very angry. You get out. Barely."}},
+    {text:"Mark on charts and leave",type:'flag',flag:'derelict_marked',msg:"You mark the coordinates. Someone will want that eventually."},
+  ]},
+  {id:'stowaway',text:"Third hour of transit. You find someone in your cargo bay. Young, clearly terrified, eating your emergency rations with the focus of someone who hasn't eaten in two days.",options:[
+    {text:"Let them stay — drop at destination",type:'credits',value:-20,msg:"They eat more rations. On arrival they press 20cr into your hand. 'It's all I have.' You don't argue."},
+    {text:"Contact Combine authorities",type:'credits',value:150,msg:"You feel terrible about this. The Combine pays the informant bonus. You feel worse."},
+    {text:"Give 50cr and point to Bellhaven",type:'credits',value:-50,msg:"They go. You don't ask what they were running from. Some questions are better unasked."},
+  ]},
+  {id:'bounty',text:"An unmarked ship hails you and demands a 'transit toll.' This is piracy, but they've said it very politely, which is almost more unsettling.",options:[
+    {text:"Pay the toll (150cr)",type:'credits',value:-150,msg:"They take the money and leave. Professional. You hate that."},
+    {text:"Refuse and evade (risk hull)",type:'hull',value:-18,msg:"You outrun them. Not easily. Your hull shows it."},
+    {text:"Attempt to negotiate (gamble)",type:'gamble',win:{credits:0,msg:"They're actually reasonable. You talk them down to 50cr and pay it."},lose:{credits:-200,hull:-10,msg:"They weren't reasonable. 200cr and a hull hit."}},
+  ]},
+  {id:'spacewhale',text:"Your sensors register something enormous. Not a ship — too organic. A creature the size of a small moon, moving through the void with improbable grace. Your nav computer has no classification. Your crew has no words.\n\nIt looks at you.\n\nYou look back.\n\nIt moves on.",options:[
+    {text:"Log the encounter",type:'flag',flag:'whale_seen',msg:"You log it. The entry reads: 'Something impossible. Very beautiful. Continued on course.' You add nothing else."},
+    {text:"Follow it briefly",type:'nothing',msg:"You follow for eleven minutes. Then it accelerates and is simply gone. You sit with that for a while."},
+  ]},
+  {id:'refugee_convoy',text:"A convoy of civilian transports, running without Combine transponders. Five ships, overloaded. Someone leans out of an airlock holding a sign: MEDICAL SUPPLIES.",options:[
+    {text:"Give 2 medical supplies",type:'give_cargo',id:'medical',qty:2,msg:"They take it with visible relief. The convoy moves on. You feel genuinely good about this."},
+    {text:"Trade medical for ore (gamble)",type:'gamble',win:{credits:120,msg:"They have more ore than expected. Fair exchange."},lose:{credits:-30,msg:"They're grateful but poor. They give you what they have."}},
+    {text:"Wave and continue",type:'nothing',msg:"You continue. You don't look back."},
+  ]},
+  {id:'black_market_tip',text:"A scrambled transmission on a frequency you weren't supposed to know about. Someone you've never met, speaking very quickly: a system, a commodity, a price. Then silence.",options:[
+    {text:"Note it and investigate",type:'flag',flag:'market_tip',msg:"Good data. One of the tips turns out to be genuinely useful."},
+    {text:"Ignore it",type:'nothing',msg:"You delete the transmission. Some invitations aren't worth accepting."},
+  ]},
+  {id:'solar_flare',text:"Unexpected solar activity. Navigation becomes creative. You have two options and about ninety seconds to decide.",options:[
+    {text:"Power down shields, ride it out",type:'hull',value:-12,msg:"The radiation hits before you can compensate. Your hull takes the difference."},
+    {text:"Emergency burn out of zone (80cr)",type:'pay',value:80,msg:"Clean escape. Expensive fuel burn. Worth it."},
+  ]},
+  {id:'equipment_auction',text:"An automated distress beacon leads you to a maintenance drone with a fault. Aboard it: crated components that fell off someone's manifest. Sitting there, unclaimed, technically salvageable under frontier law.",options:[
+    {text:"Take the components",type:'add_cargo',id:'components',qty:4,msg:"Four crates of components. Yours now, legally, sort of, by frontier salvage custom."},
+    {text:"Report to nearest station",type:'credits',value:50,msg:"The station gives you a finder's fee. Small but clean."},
+  ]},
+  {id:'combine_funeral',text:"A Combine military convoy, running with full escort — a warship carrying its dead. They hail you: cut engines and observe the transit.\n\nIt takes eleven minutes. Nobody speaks.",options:[
+    {text:"Observe respectfully",type:'nothing',msg:"The convoy passes. Whatever the war was, people died in it. That part was real."},
+    {text:"Log the escort configuration",type:'flag',flag:'combine_military_data',msg:"You note the escort configuration. Intel. Someone might want it."},
+  ]},
+  {id:'medical_emergency',text:"A mining vessel hails: crew member with a critical injury. They have nothing. Will you help?",options:[
+    {text:"Give medical supplies (1 medical)",type:'give_cargo',id:'medical',qty:1,msg:"Their medic gets to work. They give you a routing coordinate that turns out to be useful."},
+    {text:"Can't spare supplies",type:'nothing',msg:"You move on. You think about this for a while."},
+  ]},
+  {id:'information_swap',text:"A courier vessel hails you, wants to trade: they have market data on three systems, you have market data on three systems. Fair exchange.",options:[
+    {text:"Accept the trade",type:'flag',flag:'courier_intel',msg:"Good data. One of the tips turns out to be genuinely useful."},
+    {text:"Decline",type:'nothing',msg:"They shrug and continue on their route."},
+  ]},
+  {id:'customs_shakedown',text:"A Combine customs vessel boards you for 'routine inspection.' The inspector makes it extremely clear that routine inspections can go very smoothly or very slowly.",options:[
+    {text:"Pay the implied bribe (100cr)",type:'pay',value:100,msg:"The inspection takes four minutes. Everything is in order. You both pretend this was about regulations."},
+    {text:"Insist on proper process",type:'nothing',msg:"Six hours later, they find nothing and let you go. Worth it, probably."},
+    {text:"Complain to their supervisor (gamble)",type:'gamble',win:{credits:100,msg:"The supervisor is appalled. You get an apology and a refund."},lose:{credits:-200,msg:"The supervisor is the inspector's brother. You discover this after the fine."}},
+  ]},
+  {id:'smuggler_tip',text:"An independent on a parallel course flashes a specific light pattern — smuggler code for 'friendly.' They're heading the same direction. Want company?",options:[
+    {text:"Fall into convoy formation (gamble)",type:'gamble',win:{credits:0,msg:"Good conversation, shared route avoiding a Combine checkpoint. Useful."},lose:{hull:-8,msg:"They led you straight into a pirate ambush. Not maliciously. They were also ambushed."}},
+    {text:"Continue separately",type:'nothing',msg:"You wave and continue your own route."},
+  ]},
+  {id:'propaganda_drone',text:"A Combine communications drone intercepts your course and begins broadcasting. The message is four minutes long, very professional, and entirely about how the Frontier Wars were a tragedy caused by frontier extremism.\n\nIt does not mention weapons contracts.",options:[
+    {text:"Listen politely",type:'nothing',msg:"The drone completes its broadcast and departs. You feel mildly irritated."},
+    {text:"Jam the signal (gamble)",type:'gamble',win:{msg:"The jamming works. Silence. Bliss."},lose:{credits:-100,msg:"The drone has a trace function. 100cr fine for signal interference."}},
+  ]},
+  {id:'nav_ghost',text:"For forty-two minutes, your nav computer shows a second ship on an identical course — matching your speed, your heading, your micro-corrections. Then it's gone. Your sensors show nothing.",options:[
+    {text:"Run full diagnostic",type:'nothing',msg:"The diagnostic finds nothing wrong. This is not entirely reassuring."},
+    {text:"Attempt contact",type:'flag',flag:'ghost_contact',msg:"You transmit on all channels. Something transmits back — one second of static, then nothing. You keep that to yourself."},
+  ]},
+  {id:'cargo_opportunity',text:"A freighter dumps its cargo — too heavy, engine trouble. They can't take it. It's yours if you want it, drifting free in accessible space.",options:[
+    {text:"Collect ore",type:'add_cargo',id:'ore',qty:5,msg:"Five crates of ore, free to a good home."},
+    {text:"Collect food",type:'add_cargo',id:'food',qty:4,msg:"Four units of foodstuffs. The freighter crew wave as they limp away."},
+    {text:"Leave it — probably cursed",type:'nothing',msg:"You watch it drift. Probably the right call."},
+  ]},
+  {id:'old_war_wreck',text:"A war-era destroyer, completely intact, wedged into an asteroid field. Combine markings — but painted over. Under the paint: Frontier Faction insignia. Under that: Combine markings again.",options:[
+    {text:"Board and document",type:'flag',flag:'war_wreck_documented',msg:"You document it carefully. The ship was running Combine colours when it died. The Frontier insignia is painted over top, hastily, as if someone needed it to look a certain way."},
+    {text:"Leave it alone",type:'nothing',msg:"Some things should stay where they fell."},
+  ]},
+  {id:'ghost_ship',text:"An old colony transport drifting without power. You board it. The logs are intact.\n\nThe last entry reads: 'Combine escort confirmed our route. We don't understand why they're still following us.'\n\nThe date is two weeks into the Frontier Wars.",options:[
+    {text:"Copy the logs",type:'flag',flag:'colony_logs',msg:"The logs are thorough. They confirm a Combine military escort that shouldn't exist during the 'neutral' period."},
+    {text:"Leave the ship to history",type:'nothing',msg:"Some things you don't disturb."},
+  ]},
+  {id:'auction',text:"A salvage vessel signals: they've recovered an upgrade component from a derelict warship. Selling to the first reasonable offer. Auction in one hour.",options:[
+    {text:"Bid 200cr (gamble)",type:'gamble',win:{credits:-200,msg:"You win the auction. The component is worth considerably more. A good day."},lose:{credits:-200,msg:"You win but overpaid. Still, good component. Ish."}},
+    {text:"Pass",type:'nothing',msg:"You continue on your way. Someone else's lucky day."},
+  ]},
+]
+
+const UPGRADES=[
+  {id:'cargo_1',name:'Expanded Hold I',desc:"Adds 10 cargo slots.",cost:800,effect:'cargo',value:10,req:null},
+  {id:'cargo_2',name:'Expanded Hold II',desc:"Another 10 slots. Now you have absolutely no excuse.",cost:1800,effect:'cargo',value:10,req:'cargo_1'},
+  {id:'cargo_3',name:'Expanded Hold III',desc:"A third expansion. The Persistent Delusion is now primarily a warehouse.",cost:3200,effect:'cargo',value:10,req:'cargo_2'},
+  {id:'engine_1',name:'Engine Upgrade I',desc:"Cuts travel cost 25%.",cost:1000,effect:'engine',value:1,req:null},
+  {id:'engine_2',name:'Engine Upgrade II',desc:"Further 25% reduction. Handles less like a refrigerator.",cost:2200,effect:'engine',value:1,req:'engine_1'},
+  {id:'weapons_1',name:'Twin Cannon Array',desc:"Standard twin cannons. +9–11 base damage per shot.",cost:900,effect:'weapons',value:1,req:null},
+  {id:'weapons_2',name:'Military Surplus Cannon',desc:"Legal status: complicated. Effectiveness: satisfying.",cost:2000,effect:'weapons',value:1,req:'weapons_1'},
+  {id:'shields_1',name:'Shield Generator I',desc:"−3 incoming damage/turn. +5 repair per fix.",cost:950,effect:'shields',value:1,req:null},
+  {id:'shields_2',name:'Shield Generator II',desc:"Military-grade. The Combine frowns on this. Part of the appeal.",cost:2100,effect:'shields',value:1,req:'shields_1'},
+  {id:'armour',name:'Hull Plating',desc:"Adds 25 maximum hull. Heavy. Worth it.",cost:1600,effect:'hull',value:25,req:null},
+  {id:'scanner',name:'Deep Scanner',desc:"Reveals enemy hull totals and highlights rare market anomalies.",cost:1400,effect:'scanner',value:1,req:null},
+]
+
+// ═══════════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════════
+
+function rng(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min }
+
+function generateMarket(systemId) {
+  const sys = SYSTEMS[systemId]
+  const market = {}
+  COMMODITIES.forEach(c => {
+    let price = c.base
+    if (sys.cheap?.includes(c.id)) price = Math.floor(price * 0.65)
+    else if (sys.expensive?.includes(c.id)) price = Math.floor(price * 1.45)
+    price = Math.floor(price * (0.9 + Math.random() * 0.2))
+    market[c.id] = { price, qty: rng(5, 20) }
+  })
+  return market
+}
+
+function travelCost(systemId, engineLevel) {
+  const base = SYSTEMS[systemId].fuelCost
+  const mult = engineLevel === 0 ? 1 : engineLevel === 1 ? 0.75 : 0.5
+  return Math.floor(base * mult)
+}
+
+function cargoUsed(cargo) { return cargo.reduce((t, c) => t + c.qty, 0) }
+
+function playerFireDamage(weaponsLevel) { return rng(8, 14) + weaponsLevel * 10 }
+
+function playerRepairAmount(shieldsLevel) { return 15 + shieldsLevel * 5 }
+
+function getEnemyAction(enemy, patternIdx) {
+  const pattern = enemy.pattern
+  const action = pattern[patternIdx % pattern.length]
+  const nextAction = pattern[(patternIdx + 1) % pattern.length]
+  return { current: action, next: nextAction }
+}
+
+function formatIntent(action, damage) {
+  const map = { attack: `⚔️ Attack (~${damage} dmg)`, evade: '🛡 Evade (half dmg)', defend: '🛡 Defend (half dmg)', charge: '⚡ Charging...', heavy_attack: `💥 HEAVY (~${damage * 1.8 | 0} dmg)`, scan: '📡 Scan manifest' }
+  return map[action] || action
+}
+
+// ═══════════════════════════════════════════════════════════
+// STATE & REDUCER
+// ═══════════════════════════════════════════════════════════
+
+function makeInitialState() {
+  const markets = {}
+  Object.keys(SYSTEMS).forEach(id => { markets[id] = generateMarket(id) })
+  return {
+    view: 'nameEntry',
+    playerName: '', credits: 500, hull: 100, maxHull: 100,
+    cargo: [], cargoMax: 20,
+    weapons: 0, shields: 0, engine: 0,
+    upgrades: [],
+    flags: {},
+    trades: [], totalProfit: 0, totalLoss: 0, creditsEarned: 0,
+    currentSystem: 'portsmith', visitedSystems: ['portsmith'],
+    markets, npcSeen: {},
+    stationTab: 'market',
+    dialogue: null,
+    combat: null, combatLog: [],
+    event: null,
+    gameLog: ['You have inherited a ship with a name you didn\'t choose and a history you don\'t know. The Persistent Delusion. It\'ll do.'],
+    notification: null,
+  }
+}
+
+function reducer(state, action) {
+  switch (action.type) {
+
+    case 'SET_NAME': return { ...state, playerName: action.name, view: 'map' }
+
+    case 'SET_TAB': return { ...state, stationTab: action.tab }
+
+    case 'NOTIFY': return { ...state, notification: action.msg }
+    case 'CLEAR_NOTIFY': return { ...state, notification: null }
+
+    case 'GOTO_MAP': return { ...state, view: 'map', dialogue: null }
+    case 'GOTO_STATION': return { ...state, view: 'station', stationTab: action.tab || 'dock' }
+    case 'GOTO_LOG': return { ...state, view: 'log' }
+    case 'GOTO_LEDGER': return { ...state, view: 'ledger' }
+
+    case 'START_TRAVEL': {
+      const sys = SYSTEMS[action.to]
+      const cost = travelCost(action.to, state.engine)
+      if (state.credits < cost) return { ...state, notification: `Not enough credits for fuel (need ${cost})` }
+      const combatRoll = Math.random() * 100
+      let event = null, combat = null
+      if (combatRoll < sys.combatChance) {
+        const enemyTypes = ENEMIES.filter(e => sys.faction === 'Combine' ? e.id === 'patrol' : e.id !== 'patrol')
+        const eType = enemyTypes[rng(0, enemyTypes.length - 1)]
+        const enemy = { ...eType, hull: eType.maxHull, patternIdx: 0 }
+        combat = { enemy, playerAP: 3, playerEvading: false, charged: false, turn: 1, log: [eType.intro] }
+      } else {
+        const eventPool = EVENTS
+        event = eventPool[rng(0, eventPool.length - 1)]
+      }
+      const newMarkets = { ...state.markets, [action.to]: generateMarket(action.to) }
+      const visited = state.visitedSystems.includes(action.to) ? state.visitedSystems : [...state.visitedSystems, action.to]
+      const log = [`Jumped to ${sys.name}. Fuel cost: ${cost} credits.`, ...state.gameLog].slice(0, 60)
+      return {
+        ...state, credits: state.credits - cost,
+        currentSystem: action.to, visitedSystems: visited,
+        markets: newMarkets,
+        view: combat ? 'combat' : event ? 'event' : 'station',
+        stationTab: 'dock',
+        combat: combat || null, event: event || null, combatLog: combat ? [combat.log[0]] : [],
+        gameLog: log,
+      }
+    }
+
+    case 'RESOLVE_EVENT': {
+      const opt = action.option
+      let newState = { ...state, event: null, view: 'station', stationTab: 'dock' }
+      const addLog = (msg) => { newState.gameLog = [msg, ...newState.gameLog].slice(0, 60) }
+      if (opt.type === 'hull') { newState.hull = Math.max(1, state.hull + opt.value); addLog(opt.msg) }
+      else if (opt.type === 'credits') { newState.credits = Math.max(0, state.credits + opt.value); addLog(opt.msg) }
+      else if (opt.type === 'gamble') {
+        if (Math.random() > 0.45) {
+          if (opt.win.credits) newState.credits += opt.win.credits
+          if (opt.win.hull) newState.hull = Math.min(state.maxHull, state.hull + opt.win.hull)
+          addLog(opt.win.msg)
+        } else {
+          if (opt.lose.credits) newState.credits = Math.max(0, state.credits + (opt.lose.credits || 0))
+          if (opt.lose.hull) newState.hull = Math.max(1, state.hull + (opt.lose.hull || 0))
+          addLog(opt.lose.msg)
+        }
+      }
+      else if (opt.type === 'flag') { newState.flags = { ...state.flags, [opt.flag]: true }; addLog(opt.msg) }
+      else if (opt.type === 'pay_repair') { newState.credits = Math.max(0, state.credits - opt.value); addLog(opt.msg) }
+      else if (opt.type === 'info_trade') {
+        const cargoItem = state.cargo.find(c => c.id === opt.need)
+        if (cargoItem && cargoItem.qty >= opt.qty) {
+          const newCargo = state.cargo.map(c => c.id === opt.need ? { ...c, qty: c.qty - opt.qty } : c).filter(c => c.qty > 0)
+          newState.cargo = newCargo; addLog(opt.msg)
+        } else { addLog("You don't have enough food to trade.") }
+      }
+      else if (opt.type === 'give_cargo') {
+        const ci = state.cargo.find(c => c.id === opt.id)
+        if (!ci || ci.qty < opt.qty) { return {...newState, notification:`Need ${opt.qty}x ${opt.id}.`, event:state.event, view:state.view} }
+        newState.cargo = state.cargo.map(c=>c.id===opt.id?{...c,qty:c.qty-opt.qty}:c).filter(c=>c.qty>0); addLog(opt.msg)
+      }
+      else if (opt.type === 'add_cargo') {
+        const used = newState.cargo.reduce((t,c)=>t+c.qty,0)
+        if (used + opt.qty > newState.cargoMax) { return {...newState, notification:'Not enough cargo space.', event:state.event, view:state.view} }
+        const comm = COMMODITIES.find(c=>c.id===opt.id)||{name:opt.id,color:'#808080'}
+        const existing = newState.cargo.find(c=>c.id===opt.id)
+        newState.cargo = existing ? newState.cargo.map(c=>c.id===opt.id?{...c,qty:c.qty+opt.qty}:c) : [...newState.cargo,{id:opt.id,name:comm.name,qty:opt.qty,buyPrice:0,color:comm.color}]
+        addLog(opt.msg)
+      }
+      else { addLog(opt.msg || "You continue on your way.") }
+      return newState
+    }
+
+    case 'BUY': {
+      const market = state.markets[state.currentSystem]
+      const item = market[action.id]
+      const comm = COMMODITIES.find(c => c.id === action.id)
+      const qty = action.qty
+      const cost = item.price * qty
+      if (state.credits < cost) return { ...state, notification: 'Not enough credits.' }
+      if (cargoUsed(state.cargo) + qty > state.cargoMax) return { ...state, notification: 'Not enough cargo space.' }
+      const existing = state.cargo.find(c => c.id === action.id)
+      const newCargo = existing
+        ? state.cargo.map(c => c.id === action.id ? { ...c, qty: c.qty + qty } : c)
+        : [...state.cargo, { id: action.id, name: comm.name, qty, buyPrice: item.price, color: comm.color }]
+      const newMarket = { ...market, [action.id]: { ...item, qty: item.qty - qty } }
+      const log = [`Bought ${qty}x ${comm.name} for ${cost} cr at ${item.price}cr/unit.`, ...state.gameLog].slice(0, 60)
+      const bTrade={type:'buy',id:action.id,name:comm.name,color:comm.color,qty,price:item.price,total:cost,system:SYSTEMS[state.currentSystem].name}
+      return { ...state, credits: state.credits - cost, cargo: newCargo, markets: { ...state.markets, [state.currentSystem]: newMarket }, gameLog: log, trades:[bTrade,...(state.trades||[])].slice(0,100) }
+    }
+
+    case 'SELL': {
+      const market = state.markets[state.currentSystem]
+      const item = market[action.id]
+      const comm = COMMODITIES.find(c => c.id === action.id)
+      const cargoItem = state.cargo.find(c => c.id === action.id)
+      if (!cargoItem) return state
+      const qty = action.qty
+      const revenue = item.price * qty
+      const profit = (item.price - cargoItem.buyPrice) * qty
+      const newCargo = state.cargo.map(c => c.id === action.id ? { ...c, qty: c.qty - qty } : c).filter(c => c.qty > 0)
+      const newMarket = { ...market, [action.id]: { ...item, qty: item.qty + qty } }
+      const profitStr = profit >= 0 ? `+${profit}` : `${profit}`
+      const log = [`Sold ${qty}x ${comm.name} for ${revenue} cr (${profitStr} profit).`, ...state.gameLog].slice(0, 60)
+      const earned = state.creditsEarned + Math.max(0, profit)
+      const sTrade={type:'sell',id:action.id,name:comm.name,color:comm.color,qty,price:item.price,buyPrice:ci.buyPrice,profitPerUnit:item.price-ci.buyPrice,total:revenue,profit,system:SYSTEMS[state.currentSystem].name}
+      const nTP=(state.totalProfit||0)+(profit>0?profit:0),nTL=(state.totalLoss||0)+(profit<0?-profit:0)
+      return { ...state, credits: state.credits + revenue, cargo: newCargo, markets: { ...state.markets, [state.currentSystem]: newMarket }, gameLog: log, creditsEarned: earned, trades:[sTrade,...(state.trades||[])].slice(0,100), totalProfit:nTP, totalLoss:nTL }
+    }
+
+    case 'REPAIR': {
+      const amt = action.amt
+      const cost = amt * 5
+      if (state.credits < cost) return { ...state, notification: 'Not enough credits.' }
+      if (state.hull >= state.maxHull) return { ...state, notification: 'Hull is already at maximum.' }
+      const newHull = Math.min(state.maxHull, state.hull + amt)
+      const log = [`Repaired ${newHull - state.hull} hull points for ${cost} credits.`, ...state.gameLog].slice(0, 60)
+      return { ...state, credits: state.credits - cost, hull: newHull, gameLog: log }
+    }
+
+    case 'BUY_UPGRADE': {
+      const upg = UPGRADES.find(u => u.id === action.id)
+      if (!upg) return state
+      if (state.credits < upg.cost) return { ...state, notification: 'Not enough credits.' }
+      if (upg.req && !state.upgrades.includes(upg.req)) return { ...state, notification: 'Prerequisite upgrade required.' }
+      if (state.upgrades.includes(upg.id)) return { ...state, notification: 'Already installed.' }
+      let ns = { ...state, credits: state.credits - upg.cost, upgrades: [...state.upgrades, upg.id] }
+      if (upg.effect === 'cargo') ns = { ...ns, cargoMax: ns.cargoMax + upg.value }
+      else if (upg.effect === 'engine') ns = { ...ns, engine: ns.engine + upg.value }
+      else if (upg.effect === 'weapons') ns = { ...ns, weapons: ns.weapons + upg.value }
+      else if (upg.effect === 'shields') ns = { ...ns, shields: ns.shields + upg.value }
+      else if (upg.effect === 'hull') ns = { ...ns, maxHull: ns.maxHull + upg.value, hull: Math.min(ns.hull + upg.value, ns.maxHull + upg.value) }
+      const log = [`Installed: ${upg.name}.`, ...state.gameLog].slice(0, 60)
+      return { ...ns, gameLog: log }
+    }
+
+    case 'START_DIALOGUE': {
+      return { ...state, view: 'dialogue', dialogue: { npcId: action.npcId, nodeId: 'root' }, npcSeen: { ...state.npcSeen, [action.npcId]: true } }
+    }
+
+    case 'CHOOSE_OPTION': {
+      const opt = action.option
+      if (!opt) return { ...state, view: 'station', dialogue: null }
+      // Check cargo requirement
+      if (opt.requireCargo) {
+        const c = state.cargo.find(x => x.id === opt.requireCargo)
+        if (!c || c.qty < opt.requireQty) return { ...state, notification: `You need ${opt.requireQty} ${opt.requireCargo} for this.` }
+      }
+      let ns = { ...state }
+      // Deduct cargo cost
+      if (opt.costCargo) {
+        ns.cargo = ns.cargo.map(c => c.id === opt.costCargo ? { ...c, qty: c.qty - opt.costQty } : c).filter(c => c.qty > 0)
+      }
+      // Set flag
+      if (opt.flag) {
+        ns.flags = { ...ns.flags, [opt.flag]: true }
+        const log = [opt.flagLabel || `Discovery: ${opt.flag}`, ...ns.gameLog].slice(0, 60)
+        ns = { ...ns, gameLog: log }
+      }
+      // Give item
+      if (opt.giveItem === 'data_core') {
+        ns.flags = { ...ns.flags, has_data_core: true }
+        ns.gameLog = ["[You receive Edda's encrypted data core. It's surprisingly light for something this important.]", ...ns.gameLog].slice(0, 60)
+      }
+      if (!opt.go) return { ...ns, view: 'station', dialogue: null }
+      return { ...ns, dialogue: { npcId: ns.dialogue.npcId, nodeId: opt.go } }
+    }
+
+    case 'COMBAT_ACTION': {
+      if (!state.combat) return state
+      const { enemy, playerAP, playerEvading, charged, turn } = state.combat
+      let newCombat = { ...state.combat }
+      let newCombatLog = [...state.combatLog]
+      let newHull = state.hull
+      let notif = null
+
+      const { current: enemyAct, next: enemyNext } = getEnemyAction(enemy, enemy.patternIdx)
+
+      if (action.act === 'fire') {
+        if (newCombat.playerAP < 1) { notif = 'Not enough AP.'; return { ...state, notification: notif } }
+        const dmg = playerFireDamage(state.weapons)
+        const actualDmg = enemyAct === 'evade' || enemyAct === 'defend' ? Math.floor(dmg * 0.5) : dmg
+        newCombat.enemy = { ...newCombat.enemy, hull: Math.max(0, newCombat.enemy.hull - actualDmg) }
+        newCombat.playerAP -= 1
+        newCombatLog = [`Your fire: ${actualDmg} damage${(enemyAct === 'evade' || enemyAct === 'defend') ? ' (evaded!)' : ''}.`, ...newCombatLog]
+      } else if (action.act === 'overload') {
+        if (newCombat.playerAP < 2) { notif = 'Need 2 AP for overload.'; return { ...state, notification: notif } }
+        const dmg = playerFireDamage(state.weapons) * 2
+        const actualDmg = enemyAct === 'evade' || enemyAct === 'defend' ? Math.floor(dmg * 0.5) : dmg
+        newCombat.enemy = { ...newCombat.enemy, hull: Math.max(0, newCombat.enemy.hull - actualDmg) }
+        newCombat.playerAP -= 2
+        newCombatLog = [`OVERLOAD: ${actualDmg} damage${(enemyAct === 'evade' || enemyAct === 'defend') ? ' (evaded!)' : ''}!`, ...newCombatLog]
+      } else if (action.act === 'evade') {
+        if (newCombat.playerAP < 1) { notif = 'Not enough AP.'; return { ...state, notification: notif } }
+        newCombat.playerEvading = true
+        newCombat.playerAP -= 1
+        newCombatLog = [`Evasive manoeuvre: half damage this turn.`, ...newCombatLog]
+      } else if (action.act === 'repair') {
+        if (newCombat.playerAP < 2) { notif = 'Need 2 AP for repairs.'; return { ...state, notification: notif } }
+        const repAmt = playerRepairAmount(state.shields)
+        newHull = Math.min(state.maxHull, state.hull + repAmt)
+        newCombat.playerAP -= 2
+        newCombatLog = [`Emergency repair: +${repAmt} hull.`, ...newCombatLog]
+      } else if (action.act === 'end_turn') {
+        // Enemy acts
+        const dmgBase = enemy.damage + (state.shields > 0 ? -state.shields * 3 : 0)
+        let incomingDmg = 0
+        if (enemyAct === 'attack') {
+          incomingDmg = Math.max(2, dmgBase + rng(-3, 5))
+          if (newCombat.playerEvading) incomingDmg = Math.floor(incomingDmg * 0.5)
+          newHull = Math.max(0, state.hull + (newHull - state.hull) - incomingDmg)
+          if (newHull < 0) newHull = 0
+          // Actually recalculate from state.hull
+          const baseHull = newHull === state.hull ? state.hull : newHull
+          newHull = Math.max(0, newHull - incomingDmg)
+          newCombatLog = [`${enemy.name} attacks: ${incomingDmg} damage${newCombat.playerEvading ? ' (you evaded: half)' : ''}.`, ...newCombatLog]
+        } else if (enemyAct === 'heavy_attack') {
+          incomingDmg = Math.max(2, Math.floor(dmgBase * 1.8) + rng(-3, 5))
+          if (newCombat.playerEvading) incomingDmg = Math.floor(incomingDmg * 0.5)
+          newHull = Math.max(0, state.hull + (newHull - state.hull) - incomingDmg)
+          newCombatLog = [`${enemy.name} HEAVY STRIKE: ${incomingDmg} damage!`, ...newCombatLog]
+        } else if (enemyAct === 'scan') {
+          newCombatLog = [`${enemy.name} scans your manifest. Thinks about this. Attacks anyway.`, ...newCombatLog]
+        } else {
+          newCombatLog = [`${enemy.name} ${enemyAct}s. No damage.`, ...newCombatLog]
+        }
+        // Advance pattern
+        newCombat.enemy = { ...newCombat.enemy, patternIdx: newCombat.enemy.patternIdx + 1 }
+        newCombat.playerAP = 3
+        newCombat.playerEvading = false
+        newCombat.turn = newCombat.turn + 1
+      }
+
+      // Check end conditions
+      if (newCombat.enemy.hull <= 0) {
+        const reward = enemy.credits
+        const log = reward > 0
+          ? [`Victory! ${enemy.name} disabled. Salvage: ${reward} credits.`, ...state.gameLog].slice(0, 60)
+          : [`${enemy.name} stands down. No salvage.`, ...state.gameLog].slice(0, 60)
+        return { ...state, combat: null, combatLog: [], hull: action.act === 'end_turn' ? Math.max(0, newHull) : state.hull, credits: state.credits + reward, view: 'station', stationTab: 'dock', gameLog: log }
+      }
+
+      const finalHull = action.act === 'end_turn' ? Math.max(0, newHull) : action.act === 'repair' ? newHull : state.hull
+      if (finalHull <= 0) {
+        // Lose cargo, reduced hull
+        const log = [`The ${enemy.name} overwhelms you. Emergency landing. Hull critical. You lose your cargo.`, ...state.gameLog].slice(0, 60)
+        return { ...state, combat: null, combatLog: [], hull: 10, cargo: [], view: 'station', stationTab: 'dock', gameLog: log, notification: 'SHIP CRITICAL — All cargo lost. Pay for repairs immediately.' }
+      }
+
+      return { ...state, hull: finalHull, combat: newCombat, combatLog: newCombatLog.slice(0, 8) }
+    }
+
+    default: return state
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// PORTRAITS (SVG)
+// ═══════════════════════════════════════════════════════════
+
+const PD={
+  grex:{bg:'#1a2a3a',face:'#7a6050',hair:'#303040',eye:'#4080a0',exp:'stern'},
+  mara:{bg:'#2a1a3a',face:'#c09070',hair:'#804030',eye:'#80c040',exp:'wide'},
+  duchess:{bg:'#0a0a1a',face:'#806050',hair:'#101010',eye:'#9050a0',exp:'amused'},
+  smee:{bg:'#1a2a1a',face:'#a08060',hair:'#505050',eye:'#708060',exp:'tired'},
+  otto:{bg:'#2a1000',face:'#c07050',hair:'#400000',eye:'#c07030',exp:'jolly'},
+  old_nav:{bg:'#0a1020',face:'#708090',hair:'#404050',eye:'#6090b0',exp:'gaunt'},
+  pellandra:{bg:'#101828',face:'#a0b0c0',hair:'#304050',eye:'#40a0d0',exp:'sharp'},
+  becker:{bg:'#1a1200',face:'#b08050',hair:'#604020',eye:'#6080a0',exp:'kind'},
+  commander:{bg:'#101020',face:'#8090a0',hair:'#203040',eye:'#4060a0',exp:'stern'},
+  isha:{bg:'#001020',face:'#709080',hair:'#204050',eye:'#40c0d0',exp:'knowing'},
+  pirate:{bg:'#1a0000',face:'#905040',hair:'#200000',eye:'#c04030',exp:'menacing'},
+  patrol:{bg:'#101828',face:'#8090a0',hair:'#304050',eye:'#40a0ff',exp:'visor'},
+  hunter:{bg:'#050505',face:'#404040',hair:'#101010',eye:'#ff4040',exp:'unknown'},
+  wing:{bg:'#1a0a00',face:'#904030',hair:'#200800',eye:'#ff6020',exp:'menacing'},
+  combine_frigate:{bg:'#0a1020',face:'#8090a0',hair:'#203050',eye:'#4080ff',exp:'visor'},
+  frontier_raider:{bg:'#0a1000',face:'#706040',hair:'#202010',eye:'#80c040',exp:'stern'},
+  agatha:{bg:'#1a1a0a',face:'#c0a080',hair:'#707070',eye:'#8090a0',exp:'kind'},
+  okafor:{bg:'#0a0a0a',face:'#604030',hair:'#101010',eye:'#c08040',exp:'stern'},
+  kasey:{bg:'#1a2a1a',face:'#d0a070',hair:'#804020',eye:'#40c080',exp:'wide'},
+  chen:{bg:'#0a0a18',face:'#c0c0d0',hair:'#202030',eye:'#60a0d0',exp:'sharp'},
+  mirela:{bg:'#1a0a1a',face:'#b08090',hair:'#302030',eye:'#a060a0',exp:'tired'},
+  flyte:{bg:'#0a1020',face:'#d0c0b0',hair:'#a0a0b0',eye:'#70a0c0',exp:'knowing'},
+  barker:{bg:'#1a1000',face:'#b08050',hair:'#503020',eye:'#a07030',exp:'wide'},
+  sable:{bg:'#001018',face:'#80a0b0',hair:'#204060',eye:'#40d0ff',exp:'visor'},
+  ghost:{bg:'#050505',face:'#303030',hair:'#080808',eye:'#40ff80',exp:'unknown'},
+  rook:{bg:'#1a0800',face:'#c07040',hair:'#300800',eye:'#ff8020',exp:'jolly'},
+  motes:{bg:'#0a0a0a',face:'#808070',hair:'#302820',eye:'#6080a0',exp:'gaunt'},
+  edda:{bg:'#081018',face:'#a09080',hair:'#404850',eye:'#60c0a0',exp:'knowing'},
+}
+
+function Portrait({ id, size = 72 }) {
+  const d = portraitData[id] || portraitData.grex
+  const s = size
+  const cx = s / 2
+  const isGaunt = d.expression === 'gaunt'
+  const isJolly = d.expression === 'jolly'
+  const isTired = d.expression === 'tired'
+  const isSharp = d.expression === 'sharp'
+  const isUnknown = d.expression === 'unknown'
+  const isMenacing = d.expression === 'menacing'
+  const isKind = d.expression === 'kind'
+  const isKnowing = d.expression === 'knowing'
+
+  const faceW = isGaunt ? s * 0.38 : isJolly ? s * 0.47 : isSharp ? s * 0.36 : s * 0.42
+  const faceH = isGaunt ? s * 0.54 : isJolly ? s * 0.45 : s * 0.5
+  const faceY = s * 0.28
+
+  return (
+    <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`} style={{ display: 'block', borderRadius: 4, border: '1px solid #2a3a4a' }}>
+      {/* Background */}
+      <rect width={s} height={s} fill={d.bg} />
+      {/* Hair/head back */}
+      <ellipse cx={cx} cy={faceY - 2} rx={faceW + 3} ry={isGaunt ? 9 : 10} fill={d.hair} />
+      {/* Face */}
+      <ellipse cx={cx} cy={faceY + faceH * 0.38} rx={faceW} ry={faceH * 0.54} fill={d.face} />
+      {/* Eyes */}
+      {isUnknown ? (
+        <>
+          <rect x={cx - faceW * 0.55} y={faceY + faceH * 0.08} width={faceW * 0.5} height={7} rx={2} fill="#303030" />
+          <rect x={cx + faceW * 0.08} y={faceY + faceH * 0.08} width={faceW * 0.5} height={7} rx={2} fill="#303030" />
+          <circle cx={cx - faceW * 0.3} cy={faceY + faceH * 0.13} r={2.5} fill={d.eyeColor} />
+          <circle cx={cx + faceW * 0.32} cy={faceY + faceH * 0.13} r={2.5} fill={d.eyeColor} />
+        </>
+      ) : (
+        <>
+          <ellipse cx={cx - faceW * 0.32} cy={faceY + faceH * 0.15} rx={faceW * 0.2} ry={isTired ? 3.5 : isJolly ? 5 : 4.5} fill="white" />
+          <ellipse cx={cx + faceW * 0.32} cy={faceY + faceH * 0.15} rx={faceW * 0.2} ry={isTired ? 3.5 : isJolly ? 5 : 4.5} fill="white" />
+          <circle cx={cx - faceW * 0.32} cy={faceY + faceH * 0.16} r={faceW * 0.12} fill={d.eyeColor} />
+          <circle cx={cx + faceW * 0.32} cy={faceY + faceH * 0.16} r={faceW * 0.12} fill={d.eyeColor} />
+          {/* Pupils */}
+          <circle cx={cx - faceW * 0.31} cy={faceY + faceH * 0.17} r={faceW * 0.06} fill="#050505" />
+          <circle cx={cx + faceW * 0.32} cy={faceY + faceH * 0.17} r={faceW * 0.06} fill="#050505" />
+          {/* Heavy brow for stern */}
+          {d.expression === 'stern' && <>
+            <rect x={cx - faceW * 0.52} y={faceY + faceH * 0.06} width={faceW * 0.42} height={4} rx={2} fill={d.hair} />
+            <rect x={cx + faceW * 0.12} y={faceY + faceH * 0.06} width={faceW * 0.42} height={4} rx={2} fill={d.hair} />
+          </>}
+          {isTired && <>
+            <line x1={cx - faceW * 0.52} y1={faceY + faceH * 0.1} x2={cx - faceW * 0.12} y2={faceY + faceH * 0.06} stroke={d.hair} strokeWidth={3} strokeLinecap="round" />
+            <line x1={cx + faceW * 0.12} y1={faceY + faceH * 0.06} x2={cx + faceW * 0.52} y2={faceY + faceH * 0.1} stroke={d.hair} strokeWidth={3} strokeLinecap="round" />
+          </>}
+        </>
+      )}
+      {/* Nose */}
+      <ellipse cx={cx} cy={faceY + faceH * 0.38} rx={faceW * 0.1} ry={faceW * 0.08} fill={d.face} stroke={d.hair} strokeWidth={0.8} strokeOpacity={0.4} />
+      {/* Mouth */}
+      {isJolly ? <path d={`M ${cx - faceW * 0.35} ${faceY + faceH * 0.62} Q ${cx} ${faceY + faceH * 0.75} ${cx + faceW * 0.35} ${faceY + faceH * 0.62}`} stroke={d.hair} strokeWidth={2.5} fill="none" strokeLinecap="round" />
+      : isMenacing ? <path d={`M ${cx - faceW * 0.3} ${faceY + faceH * 0.68} Q ${cx} ${faceY + faceH * 0.58} ${cx + faceW * 0.3} ${faceY + faceH * 0.68}`} stroke={d.hair} strokeWidth={2} fill="none" strokeLinecap="round" />
+      : d.expression === 'amused' ? <path d={`M ${cx - faceW * 0.2} ${faceY + faceH * 0.65} Q ${cx + faceW * 0.15} ${faceY + faceH * 0.72} ${cx + faceW * 0.32} ${faceY + faceH * 0.60}`} stroke={d.hair} strokeWidth={2} fill="none" strokeLinecap="round" />
+      : isKnowing ? <path d={`M ${cx - faceW * 0.22} ${faceY + faceH * 0.64} Q ${cx} ${faceY + faceH * 0.70} ${cx + faceW * 0.28} ${faceY + faceH * 0.62}`} stroke={d.hair} strokeWidth={2} fill="none" strokeLinecap="round" />
+      : <line x1={cx - faceW * 0.25} y1={faceY + faceH * 0.65} x2={cx + faceW * 0.25} y2={faceY + faceH * 0.65} stroke={d.hair} strokeWidth={2} strokeLinecap="round" />}
+      {/* Otto mustache */}
+      {isJolly && <path d={`M ${cx - faceW * 0.4} ${faceY + faceH * 0.52} C ${cx - faceW * 0.2} ${faceY + faceH * 0.57} ${cx} ${faceY + faceH * 0.5} ${cx} ${faceY + faceH * 0.5} C ${cx} ${faceY + faceH * 0.5} ${cx + faceW * 0.2} ${faceY + faceH * 0.57} ${cx + faceW * 0.4} ${faceY + faceH * 0.52}`} stroke={d.hair} strokeWidth={3} fill="none" />}
+      {/* Scar for pirate */}
+      {isMenacing && <line x1={cx - faceW * 0.1} y1={faceY + faceH * 0.05} x2={cx - faceW * 0.4} y2={faceY + faceH * 0.45} stroke="#601010" strokeWidth={2} strokeOpacity={0.7} />}
+      {/* Visor for patrol */}
+      {id === 'patrol' && <rect x={cx - faceW * 0.55} y={faceY + faceH * 0.05} width={faceW * 1.1} height={faceH * 0.25} rx={3} fill="#203040" opacity={0.85} />}
+      {/* Bottom shadow */}
+      <ellipse cx={cx} cy={s - 6} rx={faceW * 0.7} ry={6} fill={d.hair} opacity={0.5} />
+    </svg>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════
+// HUD
+// ═══════════════════════════════════════════════════════════
+
+function HUD({ state, dispatch }) {
+  const used = cargoUsed(state.cargo)
+  const hullPct = (state.hull / state.maxHull) * 100
+  const hullColor = hullPct > 60 ? '#4ade80' : hullPct > 30 ? '#facc15' : '#f87171'
+
+  return (
+    <div style={{ background: '#050d14', borderBottom: '1px solid #1a3a5a', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', fontSize: 12, fontFamily: 'Space Mono, monospace', position: 'sticky', top: 0, zIndex: 100 }}>
+      <span style={{ color: '#4ade80', fontWeight: 'bold' }}>⬡ {state.credits.toLocaleString()} CR</span>
+      <span style={{ color: '#7090a0' }}>│</span>
+      <span>
+        <span style={{ color: '#708090' }}>HULL </span>
+        <span style={{ color: hullColor }}>{state.hull}/{state.maxHull}</span>
+      </span>
+      <span style={{ color: '#7090a0' }}>│</span>
+      <span style={{ color: '#708090' }}>CARGO <span style={{ color: used >= state.cargoMax ? '#f87171' : '#a0b0c0' }}>{used}/{state.cargoMax}</span></span>
+      <span style={{ color: '#7090a0' }}>│</span>
+      <span style={{ color: '#4080c0' }}>{SYSTEMS[state.currentSystem]?.name || '—'}</span>
+      <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+        {state.view !== 'map' && state.view !== 'combat' && state.view !== 'event' && (
+          <button onClick={() => dispatch({ type: 'GOTO_MAP' })} style={{ background: 'none', border: '1px solid #1a3a5a', color: '#4080c0', padding: '2px 10px', borderRadius: 4, cursor: 'pointer', fontSize: 11 }}>CHART</button>
+        )}
+        {state.view !== 'log' && state.view !== 'combat' && state.view !== 'event' && (
+          <button onClick={() => { SFX.click(); dispatch({ type: 'GOTO_LOG' }) }} style={{ background: 'none', border: '1px solid #1a3a5a', color: '#708090', padding: '2px 10px', borderRadius: 4, cursor: 'pointer', fontSize: 11 }}>LOG</button>
+          <button onClick={() => { SFX.click(); dispatch({ type: 'GOTO_LEDGER' }) }} style={{ background: 'none', border: '1px solid #1a3a5a', color: '#708090', padding: '2px 10px', borderRadius: 4, cursor: 'pointer', fontSize: 11 }}>P&L</button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════
+// NAME ENTRY
+// ═══════════════════════════════════════════════════════════
+
+function NameEntry({ dispatch }) {
+  const [name, setName] = useState('')
+  return (
+    <div style={{ minHeight: '100vh', background: '#010a14', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, fontFamily: 'Space Mono, monospace', color: '#a0c0d0' }}>
+      {/* Stars */}
+      <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+        {Array.from({ length: 60 }, (_, i) => (
+          <div key={i} style={{ position: 'absolute', left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%`, width: Math.random() > 0.85 ? 2 : 1, height: Math.random() > 0.85 ? 2 : 1, background: '#a0c0d0', borderRadius: '50%', opacity: 0.2 + Math.random() * 0.6 }} />
+        ))}
+      </div>
+      <div style={{ position: 'relative', maxWidth: 480, width: '100%', textAlign: 'center' }}>
+        <div style={{ color: '#2a5a8a', fontSize: 11, letterSpacing: 6, marginBottom: 8 }}>A GAME OF TRADING, DISCOVERY & MILD PERIL</div>
+        <h1 style={{ fontSize: 28, color: '#c0e0f0', margin: '0 0 4px', letterSpacing: 3, fontWeight: 'normal' }}>THE LONG ROUTE</h1>
+        <div style={{ color: '#304050', marginBottom: 40, fontSize: 12 }}>──────────────────</div>
+        <div style={{ color: '#1a3040', marginBottom: 20, fontSize: 10, letterSpacing: 2 }}>v3.0 · 16 SYSTEMS · 22 CHARACTERS · 25 EVENTS</div>
+        <div style={{ background: '#050d18', border: '1px solid #1a3a5a', borderRadius: 8, padding: 24, textAlign: 'left', marginBottom: 24, lineHeight: 1.7 }}>
+          <p style={{ margin: '0 0 12px', color: '#8090a0', fontSize: 13 }}>You have come into possession of a second-hand trading vessel called the <span style={{ color: '#c0d0e0' }}>Persistent Delusion</span>.</p>
+          <p style={{ margin: '0 0 12px', color: '#8090a0', fontSize: 13 }}>You bought it from a salvage yard on Portsmith Station for considerably more than it was worth, because the previous owner left a forwarding address of <span style={{ color: '#a0b0c0' }}>"none of your business"</span> and you found this intriguing.</p>
+          <p style={{ margin: 0, color: '#8090a0', fontSize: 13 }}>You have <span style={{ color: '#4ade80' }}>500 credits</span>, a ship with <span style={{ color: '#4ade80' }}>20 cargo slots</span>, and no plan whatsoever. This is, statistically speaking, how most great things begin.</p>
+        </div>
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: 'block', color: '#4080a0', fontSize: 11, letterSpacing: 2, marginBottom: 8 }}>CAPTAIN'S NAME</label>
+          <input
+            value={name}
+            onChange={e => setName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && name.trim() && dispatch({ type: 'SET_NAME', name: name.trim() })}
+            placeholder="..."
+            style={{ width: '100%', background: '#050d18', border: '1px solid #1a3a5a', color: '#c0e0f0', padding: '10px 14px', borderRadius: 6, fontSize: 16, fontFamily: 'Space Mono, monospace', boxSizing: 'border-box', outline: 'none' }}
+            autoFocus
+          />
+        </div>
+        <button
+          onClick={() => name.trim() && dispatch({ type: 'SET_NAME', name: name.trim() })}
+          style={{ width: '100%', padding: '12px', background: name.trim() ? '#0a2a4a' : '#050d18', border: `1px solid ${name.trim() ? '#2a6a9a' : '#1a2a3a'}`, color: name.trim() ? '#4aafe0' : '#304050', borderRadius: 6, fontSize: 14, letterSpacing: 3, cursor: name.trim() ? 'pointer' : 'default', fontFamily: 'Space Mono, monospace', transition: 'all 0.2s' }}
+        >LAUNCH</button>
+      </div>
+    </div>
+  )
+}
+
+// ── HYPERSPACE OVERLAY ────────────────────────────────────
+function HyperspaceOverlay({phase,destination}){
+  const canvasRef=useRef(null),animRef=useRef(null)
+  useEffect(()=>{
+    const canvas=canvasRef.current;if(!canvas)return
+    canvas.width=window.innerWidth;canvas.height=window.innerHeight
+    const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height,cx=W/2,cy=H/2
+    const stars=Array.from({length:160},()=>({angle:Math.random()*Math.PI*2,speed:.3+Math.random()*.7,dist:.03+Math.random()*.12,len:0,hue:200+Math.random()*50,bright:70+Math.random()*30}))
+    let t=0
+    const draw=()=>{
+      t++
+      const prog=Math.min(t/80,1)
+      ctx.fillStyle=phase==='arrive'?'rgba(1,10,20,0.22)':'rgba(1,10,20,0.16)'
+      ctx.fillRect(0,0,W,H)
+      const spd=phase==='arrive'?(1-prog)*.1+.002:prog*.14+.003
+      stars.forEach(s=>{
+        s.len+=spd*s.speed*55
+        const r0=s.dist*Math.min(W,H)*.5,r1=r0+s.len*Math.min(W,H)*.45
+        const x0=cx+Math.cos(s.angle)*r0,y0=cy+Math.sin(s.angle)*r0
+        const x1=cx+Math.cos(s.angle)*r1,y1=cy+Math.sin(s.angle)*r1
+        const grd=ctx.createLinearGradient(x0,y0,x1,y1)
+        const alpha=phase==='arrive'?(1-prog)*(.3+s.speed*.5):prog*(.4+s.speed*.5)
+        grd.addColorStop(0,'rgba(0,0,0,0)')
+        grd.addColorStop(1,`hsla(${s.hue},80%,${s.bright}%,${alpha})`)
+        ctx.strokeStyle=grd;ctx.lineWidth=phase==='arrive'?1.2:Math.min(2.5,s.len*1.5+.4)
+        ctx.globalAlpha=1;ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.stroke()
+      })
+      const gA=phase==='arrive'?(1-prog)*.5:prog*.35
+      const glow=ctx.createRadialGradient(cx,cy,0,cx,cy,Math.min(W,H)*.28)
+      glow.addColorStop(0,`rgba(80,180,255,${gA*1.2})`)
+      glow.addColorStop(.5,`rgba(30,80,200,${gA*.4})`)
+      glow.addColorStop(1,'rgba(0,0,0,0)')
+      ctx.fillStyle=glow;ctx.beginPath();ctx.arc(cx,cy,Math.min(W,H)*.35,0,Math.PI*2);ctx.fill()
+      ctx.globalAlpha=1
+      animRef.current=requestAnimationFrame(draw)
+    }
+    draw()
+    return()=>{if(animRef.current)cancelAnimationFrame(animRef.current)}
+  },[phase])
+  const sys=SYSTEMS[destination]
+  return(
+    <div style={{position:'fixed',inset:0,zIndex:500,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
+      <canvas ref={canvasRef} style={{position:'absolute',inset:0,width:'100%',height:'100%'}}/>
+      <div style={{position:'relative',textAlign:'center',animation:'fadeIn .4s ease',fontFamily:"'Space Mono',monospace"}}>
+        {phase==='jump'&&<><div style={{color:'#2a5a8a',fontSize:10,letterSpacing:6,marginBottom:16}}>ENTERING HYPERSPACE</div>
+        <div style={{color:'#80d0ff',fontSize:20,letterSpacing:4,textShadow:'0 0 30px #4aafe0,0 0 60px #4aafe0'}}>{sys?.name}</div>
+        <div style={{color:'#2a5a8a',fontSize:10,marginTop:12,letterSpacing:3}}>ROUTE LOCKED</div></>}
+        {phase==='arrive'&&<><div style={{color:'#2a6a4a',fontSize:10,letterSpacing:6,marginBottom:16}}>ARRIVAL CONFIRMED</div>
+        <div style={{color:'#80ffc0',fontSize:20,letterSpacing:4,textShadow:'0 0 30px #40d080,0 0 60px #40d080'}}>{sys?.name}</div>
+        <div style={{color:'#2a6a4a',fontSize:10,marginTop:12,letterSpacing:3}}>{sys?.economy}</div></>}
+      </div>
+    </div>
+  )
+}
+
+// ── GALAXY MAP ─────────────────────────────────────────────
+function GalaxyMap({state,dispatch}){
+  const [hovered,setHovered]=useState(null)
+  const [jumping,setJumping]=useState(null)
+  const [phase,setPhase]=useState('jump')
+  const pending=useRef(null)
+  const cur=state.currentSystem
+
+  const handleJump=sysId=>{
+    if(!sysId||sysId===cur||jumping)return
+    SFX.jump()
+    setJumping(sysId);setPhase('jump');pending.current=sysId
+    setTimeout(()=>{setPhase('arrive');SFX.arrive()},1400)
+    setTimeout(()=>{setJumping(null);dispatch({type:'START_TRAVEL',to:pending.current})},2500)
+  }
+
+  const conns=[]
+  Object.values(SYSTEMS).forEach(s=>s.connections.forEach(c=>{
+    const key=[s.id,c].sort().join('-')
+    if(!conns.find(x=>x.key===key))conns.push({key,a:s.id,b:c})
+  }))
+
+  const canUnlock=s=>{
+    if(!s.locked)return true;const r=s.unlockReq;if(!r)return false
+    if(r.type==='credits')return state.creditsEarned>=r.amount||state.credits>=r.amount
+    if(r.type==='flag')return!!state.flags[r.flag];return false
+  }
+  const canGo=id=>{
+    if(!SYSTEMS[cur].connections.includes(id))return false
+    const t=SYSTEMS[id];if(t.locked&&!canUnlock(t))return false
+    return state.credits>=travelCost(id,state.engine)
+  }
+
+  const W2=460,H2=300,PAD=8
+  const sx=id=>(SYSTEMS[id].x/100)*(W2-PAD*2)+PAD
+  const sy=id=>(SYSTEMS[id].y/100)*(H2-PAD*2)+PAD
+
+  const tierCol={1:'#2a5a90',2:'#4a8040',3:'#904040',4:'#806020'}
+
+  return(
+    <div style={{padding:'10px 14px',fontFamily:"'Space Mono',monospace",maxWidth:520,margin:'0 auto'}}>
+      {jumping&&<HyperspaceOverlay phase={phase} destination={jumping}/>}
+      <div style={{color:'#304050',fontSize:10,letterSpacing:3,marginBottom:8}}>NAVIGATION CHART — {Object.keys(SYSTEMS).length} SYSTEMS CHARTED</div>
+      <div style={{background:'#030a12',border:'1px solid #1a3040',borderRadius:8,overflow:'hidden',marginBottom:12}}>
+        <svg width="100%" viewBox={`0 0 ${W2} ${H2}`} style={{display:'block'}}>
+          {Array.from({length:70},(_,i)=>(
+            <circle key={i} cx={(i*63+17)%W2} cy={(i*89+31)%H2} r={i%6===0?1.3:.6} fill="#a0c0d0" opacity={(i%5+2)*.04}/>
+          ))}
+          {conns.map(({key,a,b})=>{
+            const acc=canGo(b)||canGo(a)||cur===a||cur===b
+            return<line key={key} x1={sx(a)} y1={sy(a)} x2={sx(b)} y2={sy(b)}
+              stroke={acc?'#1a4060':'#0a1820'} strokeWidth={acc?1:.7} strokeDasharray={acc?undefined:'4,4'} opacity={acc?.8:.5}/>
+          })}
+          {Object.values(SYSTEMS).map(s=>{
+            const x=sx(s.id),y=sy(s.id)
+            const isCur=s.id===cur,cg=canGo(s.id),ul=canUnlock(s),hov=hovered===s.id
+            const col=isCur?'#4aaad0':cg?(tierCol[s.tier]||'#606060'):'#1a2a3a'
+            const cost=s.id!==cur?travelCost(s.id,state.engine):0
+            const r=isCur?8:s.locked&&!ul?4:5
+            return(
+              <g key={s.id} style={{cursor:cg&&s.id!==cur?'pointer':'default'}}
+                onClick={()=>cg&&s.id!==cur&&!jumping&&handleJump(s.id)}
+                onMouseEnter={()=>setHovered(s.id)} onMouseLeave={()=>setHovered(null)}>
+                {isCur&&<circle cx={x} cy={y} r={20} fill="none" stroke="#4aaad0" strokeWidth={.7} opacity={.25}/>}
+                {cg&&!isCur&&<circle cx={x} cy={y} r={15} fill="none" stroke={col} strokeWidth={.5} opacity={.4}/>}
+                <circle cx={x} cy={y} r={r}
+                  fill={s.locked&&!ul?'#080f18':isCur?'#4aaad0':cg?col:'#111a28'}
+                  stroke={isCur?'#a0e0ff':hov&&cg?'#c0e0ff':cg?col:'#1a2a3a'}
+                  strokeWidth={isCur?2:hov&&cg?1.5:1} opacity={s.locked&&!ul?.4:1}/>
+                {s.locked&&!ul&&<text x={x} y={y+1} textAnchor="middle" dominantBaseline="middle" fontSize={5} fill="#303040">🔒</text>}
+                <text x={x} y={y+13} textAnchor="middle" fontSize={6.5}
+                  fill={isCur?'#80d0f0':cg?'#808ea0':'#304050'} fontFamily="monospace">{s.name.length>16?s.name.split(' ').slice(0,2).join(' '):s.name}</text>
+                {cg&&!isCur&&cost>0&&<text x={x} y={y+21} textAnchor="middle" fontSize={5.5} fill="#3a5a70" fontFamily="monospace">{cost}cr</text>}
+                {hov&&s.locked&&!ul&&(
+                  <g>
+                    <rect x={Math.min(x-60,W2-122)} y={y+22} width={120} height={18} rx={3} fill="#050d18" stroke="#1a3040"/>
+                    <text x={Math.min(x,W2-62)} y={y+31} textAnchor="middle" fontSize={5.5} fill="#5a7a90" fontFamily="monospace">{s.unlockReq?.label?.slice(0,28)}</text>
+                  </g>
+                )}
+              </g>
+            )
+          })}
+        </svg>
+      </div>
+
+      <div style={{background:'#030a12',border:'1px solid #1a3040',borderRadius:8,padding:14,marginBottom:12}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:4}}>
+          <span style={{color:'#c0d0e0',fontSize:14}}>{SYSTEMS[cur].name}</span>
+          <span style={{color:'#4a6a80',fontSize:10}}>{SYSTEMS[cur].faction} · {SYSTEMS[cur].economy}</span>
+        </div>
+        <p style={{color:'#607080',fontSize:12,margin:'0 0 12px',lineHeight:1.6}}>{SYSTEMS[cur].desc}</p>
+        <button onClick={()=>{SFX.click();dispatch({type:'GOTO_STATION',tab:'market'})}}
+          style={{width:'100%',padding:'11px',background:'#0a2a4a',border:'1px solid #2a5a8a',color:'#4aafe0',borderRadius:6,cursor:'pointer',fontSize:13,fontFamily:"'Space Mono',monospace",letterSpacing:2}}>
+          DOCK AT STATION
+        </button>
+      </div>
+
+      {Object.values(SYSTEMS).filter(s=>!s.locked&&SYSTEMS[cur].connections.includes(s.id)&&canGo(s.id)).length>0&&(
+        <div style={{background:'#030a12',border:'1px solid #1a2a3a',borderRadius:8,padding:12,marginBottom:12,fontSize:11}}>
+          <div style={{color:'#3a5a70',marginBottom:8,letterSpacing:2,fontSize:10}}>JUMP DESTINATIONS</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+            {SYSTEMS[cur].connections.filter(id=>canGo(id)).map(id=>{
+              const s=SYSTEMS[id]
+              return(
+                <button key={id} onClick={()=>handleJump(id)}
+                  style={{padding:'5px 10px',background:'#060f1a',border:'1px solid #1a3a5a',color:'#6090b0',borderRadius:4,cursor:'pointer',fontSize:11,fontFamily:"'Space Mono',monospace"}}>
+                  {s.name} <span style={{color:'#3a5a70'}}>{travelCost(id,state.engine)}cr</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {(state.flags.edda_clue_1||state.flags.edda_clue_2||state.flags.edda_clue_3)&&(
+        <div style={{background:'#030a12',border:'1px solid #1a2a1a',borderRadius:8,padding:12,fontSize:11}}>
+          <div style={{color:'#4a6a4a',letterSpacing:2,marginBottom:8,fontSize:10}}>INVESTIGATION</div>
+          {state.flags.edda_clue_1&&<div style={{color:'#70a070',marginBottom:3}}>🔍 Grex remembers Edda Vance</div>}
+          {state.flags.edda_clue_2&&<div style={{color:'#70a070',marginBottom:3}}>🔍 Mara's warning — find Smee at The Sump</div>}
+          {state.flags.edda_clue_3&&<div style={{color:'#70a070',marginBottom:3}}>🔍 Data core obtained from Smee</div>}
+          {state.flags.consortium_files&&<div style={{color:'#80b080',marginBottom:3}}>📁 Consortium records in hand</div>}
+          {state.flags.edda_clue_3&&!state.flags.decryption_complete&&<div style={{color:'#507060',fontSize:10,marginTop:4}}>→ Find Keeper Isha at Kessel Expanse</div>}
+          {state.flags.decryption_complete&&!state.flags.truth_revealed&&<div style={{color:'#80d080',marginBottom:3}}>🔓 Core decrypted — Edda is at Cold Harbor</div>}
+          {state.flags.truth_revealed&&!state.flags.game_complete&&<div style={{color:'#d0c060'}}>📡 The truth is known. Find Edda at Exodus Point.</div>}
+          {state.flags.game_complete&&<div style={{color:'#ffe080',fontSize:13}}>✨ The Long Route — Complete.</div>}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── TRADE LEDGER ───────────────────────────────────────────
+function LedgerScreen({state,dispatch}){
+  const net=(state.totalProfit||0)-(state.totalLoss||0)
+  const trades=state.trades||[]
+  const byCom={}
+  trades.filter(t=>t.type==='sell').forEach(t=>{
+    if(!byCom[t.id])byCom[t.id]={name:t.name,color:t.color,units:0,revenue:0,profit:0,count:0}
+    byCom[t.id].units+=t.qty;byCom[t.id].revenue+=t.total;byCom[t.id].profit+=t.profit;byCom[t.id].count++
+  })
+  const sorted=Object.values(byCom).sort((a,b)=>b.profit-a.profit)
+  return(
+    <div style={{fontFamily:"'Space Mono',monospace",maxWidth:500,margin:'0 auto',padding:16}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+        <div style={{color:'#304050',fontSize:10,letterSpacing:3}}>TRADE LEDGER</div>
+        <button onClick={()=>{SFX.click();dispatch({type:'GOTO_MAP'})}} style={{background:'none',border:'1px solid #1a3040',color:'#4a6a80',padding:'4px 12px',borderRadius:4,cursor:'pointer',fontSize:11,fontFamily:"'Space Mono',monospace"}}>BACK</button>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:14}}>
+        <div style={{background:'#030a12',border:'1px solid #1a3a1a',borderRadius:8,padding:10,textAlign:'center'}}>
+          <div style={{color:'#4a6a4a',fontSize:9,marginBottom:3,letterSpacing:1}}>PROFIT</div>
+          <div style={{color:'#4ade80',fontSize:13}}>+{state.totalProfit||0}cr</div>
+        </div>
+        <div style={{background:'#030a12',border:'1px solid #3a1a1a',borderRadius:8,padding:10,textAlign:'center'}}>
+          <div style={{color:'#6a4a4a',fontSize:9,marginBottom:3,letterSpacing:1}}>LOSS</div>
+          <div style={{color:'#f87171',fontSize:13}}>-{state.totalLoss||0}cr</div>
+        </div>
+        <div style={{background:'#030a12',border:`1px solid ${net>=0?'#1a3a1a':'#3a1a1a'}`,borderRadius:8,padding:10,textAlign:'center'}}>
+          <div style={{color:'#4a6a60',fontSize:9,marginBottom:3,letterSpacing:1}}>NET</div>
+          <div style={{color:net>=0?'#4ade80':'#f87171',fontSize:13}}>{net>=0?'+':''}{net}cr</div>
+        </div>
+      </div>
+      {sorted.length>0&&(
+        <div style={{background:'#030a12',border:'1px solid #1a3040',borderRadius:8,padding:12,marginBottom:14}}>
+          <div style={{color:'#4a6a80',fontSize:9,letterSpacing:2,marginBottom:10}}>BY COMMODITY</div>
+          {sorted.map(c=>(
+            <div key={c.name} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 0',borderBottom:'1px solid #0d1e2a'}}>
+              <span style={{color:c.color,fontSize:12,flex:1}}>● {c.name}</span>
+              <span style={{color:'#4a6a80',fontSize:10}}>{c.units}u/{c.count}t</span>
+              <span style={{color:c.profit>=0?'#4ade80':'#f87171',fontSize:12,minWidth:66,textAlign:'right'}}>{c.profit>=0?'+':''}{c.profit}cr</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <div style={{background:'#030a12',border:'1px solid #1a3040',borderRadius:8,padding:12}}>
+        <div style={{color:'#4a6a80',fontSize:9,letterSpacing:2,marginBottom:10}}>RECENT TRADES</div>
+        {trades.length===0&&<div style={{color:'#304050',fontSize:12}}>No trades yet.</div>}
+        {trades.map((t,i)=>(
+          <div key={i} style={{padding:'7px 0',borderBottom:'1px solid #0a1820'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:2}}>
+              <div style={{display:'flex',alignItems:'center',gap:7}}>
+                <span style={{color:t.type==='buy'?'#5090d0':'#d0a050',fontSize:9,background:t.type==='buy'?'#0a1a2a':'#2a1a0a',padding:'1px 6px',borderRadius:3}}>{t.type.toUpperCase()}</span>
+                <span style={{color:t.color,fontSize:12}}>{t.name}</span>
+              </div>
+              <span style={{color:t.type==='sell'?(t.profit>=0?'#4ade80':'#f87171'):'#607080',fontSize:12}}>
+                {t.type==='sell'?(t.profit>=0?'+':'')+t.profit+'cr':'-'+t.total+'cr'}
+              </span>
+            </div>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#3a5a6a'}}>
+              <span>{t.qty}× @{t.price}cr{t.type==='sell'?` (cost ${t.buyPrice}, ${t.profitPerUnit>=0?'+':''}${t.profitPerUnit}/u)`:''}</span>
+              <span>{t.system}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════
+// STATION VIEW
+// ═══════════════════════════════════════════════════════════
+
+function StationView({ state, dispatch }) {
+  const sys = SYSTEMS[state.currentSystem]
+  const tab = state.stationTab
+
+  return (
+    <div style={{ fontFamily: 'Space Mono, monospace', maxWidth: 520, margin: '0 auto', padding: '12px 16px' }}>
+      <div style={{ color: '#304050', fontSize: 11, letterSpacing: 3, marginBottom: 4 }}>DOCKED AT</div>
+      <div style={{ color: '#c0d0e0', fontSize: 16, marginBottom: 12 }}>{sys.name} <span style={{ color: '#4a6a80', fontSize: 11 }}>// {sys.economy}</span></div>
+
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 16, borderBottom: '1px solid #1a3040', paddingBottom: 8 }}>
+        {['dock', 'market', 'bar', 'shipyard'].map(t => (
+          <button key={t} onClick={() => dispatch({ type: 'SET_TAB', tab: t })}
+            style={{ padding: '6px 12px', background: tab === t ? '#0a2a4a' : 'none', border: `1px solid ${tab === t ? '#2a5a8a' : '#1a2a3a'}`, color: tab === t ? '#4aafe0' : '#4a6a80', borderRadius: 4, cursor: 'pointer', fontSize: 11, letterSpacing: 1 }}>
+            {t.toUpperCase()}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'dock' && <DockTab state={state} dispatch={dispatch} sys={sys} />}
+      {tab === 'market' && <MarketTab state={state} dispatch={dispatch} sys={sys} />}
+      {tab === 'bar' && <BarTab state={state} dispatch={dispatch} sys={sys} />}
+      {tab === 'shipyard' && <ShipyardTab state={state} dispatch={dispatch} />}
+    </div>
+  )
+}
+
+function DockTab({ state, dispatch, sys }) {
+  const [repairAmt, setRepairAmt] = useState(10)
+  const missing = state.maxHull - state.hull
+  const repAmt = Math.min(repairAmt, missing)
+  const repCost = repAmt * 5
+  return (
+    <div>
+      <div style={{ background: '#030a12', border: '1px solid #1a3040', borderRadius: 8, padding: 16, marginBottom: 12 }}>
+        <div style={{ color: '#708090', fontSize: 11, marginBottom: 8, letterSpacing: 1 }}>SHIP STATUS</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+          <StatBlock label="Hull" val={`${state.hull}/${state.maxHull}`} color={state.hull < 40 ? '#f87171' : '#4ade80'} />
+          <StatBlock label="Cargo" val={`${cargoUsed(state.cargo)}/${state.cargoMax}`} color="#a0c0d0" />
+          <StatBlock label="Weapons" val={`LV${state.weapons}`} color="#d0a050" />
+          <StatBlock label="Shields" val={`LV${state.shields}`} color="#5090d0" />
+          <StatBlock label="Engine" val={`LV${state.engine}`} color="#50d0a0" />
+          <StatBlock label="System" val={sys.faction} color={sys.faction === 'Combine' ? '#4080c0' : sys.faction === 'Neutral' ? '#808080' : '#a06040'} />
+        </div>
+        {state.hull < state.maxHull && (
+          <div style={{ borderTop: '1px solid #1a3040', paddingTop: 12 }}>
+            <div style={{ color: '#607080', fontSize: 11, marginBottom: 8 }}>Hull repair: 5cr/point</div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input type="range" min={1} max={missing} value={repairAmt} onChange={e => setRepairAmt(Number(e.target.value))}
+                style={{ flex: 1, accentColor: '#4ade80' }} />
+              <span style={{ color: '#a0c0d0', fontSize: 12, minWidth: 60 }}>{repAmt} pts</span>
+              <button onClick={() => dispatch({ type: 'REPAIR', amt: repAmt })}
+                style={{ padding: '6px 12px', background: '#0a2a0a', border: '1px solid #2a5a2a', color: '#4ade80', borderRadius: 4, cursor: 'pointer', fontSize: 11, fontFamily: 'Space Mono, monospace' }}>
+                {repCost}cr
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Cargo manifest */}
+      {state.cargo.length > 0 && (
+        <div style={{ background: '#030a12', border: '1px solid #1a3040', borderRadius: 8, padding: 16 }}>
+          <div style={{ color: '#708090', fontSize: 11, marginBottom: 8, letterSpacing: 1 }}>CARGO MANIFEST</div>
+          {state.cargo.map(c => {
+            const mktPrice = state.markets[state.currentSystem]?.[c.id]?.price || 0
+            const profit = (mktPrice - c.buyPrice) * c.qty
+            return (
+              <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #0d1e2a' }}>
+                <span style={{ color: c.color, fontSize: 12 }}>● {c.name}</span>
+                <span style={{ color: '#607080', fontSize: 11 }}>{c.qty}x @ {c.buyPrice}cr</span>
+                <span style={{ color: profit >= 0 ? '#4ade80' : '#f87171', fontSize: 11 }}>{profit >= 0 ? '+' : ''}{profit}cr</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function StatBlock({ label, val, color }) {
+  return (
+    <div style={{ background: '#060f18', border: '1px solid #1a2a3a', borderRadius: 6, padding: '8px 10px' }}>
+      <div style={{ color: '#4a6a80', fontSize: 10, letterSpacing: 1 }}>{label}</div>
+      <div style={{ color: color || '#a0c0d0', fontSize: 14, marginTop: 2 }}>{val}</div>
+    </div>
+  )
+}
+
+function MarketTab({ state, dispatch, sys }) {
+  const [qty, setQty] = useState({})
+  const market = state.markets[state.currentSystem] || {}
+
+  return (
+    <div>
+      {COMMODITIES.filter(c => !(!sys.hasBlackMarket && c.id === 'contraband')).map(c => {
+        const mkt = market[c.id] || { price: c.base, qty: 0 }
+        const cargoItem = state.cargo.find(x => x.id === c.id)
+        const cargoQty = cargoItem?.qty || 0
+        const q = qty[c.id] || 1
+        const isCheap = sys.cheap?.includes(c.id)
+        const isExpensive = sys.expensive?.includes(c.id)
+
+        return (
+          <div key={c.id} style={{ background: '#030a12', border: '1px solid #1a3040', borderRadius: 8, padding: 12, marginBottom: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <div>
+                <span style={{ color: c.color, fontSize: 13 }}>● {c.name}</span>
+                {isCheap && <span style={{ color: '#4ade80', fontSize: 9, marginLeft: 8 }}>▼CHEAP</span>}
+                {isExpensive && <span style={{ color: '#f87171', fontSize: 9, marginLeft: 8 }}>▲HIGH</span>}
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ color: '#c0d0e0', fontSize: 14 }}>{mkt.price}cr</div>
+                <div style={{ color: '#4a6a80', fontSize: 10 }}>avail: {mkt.qty}</div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button onClick={() => setQty(q2 => ({ ...q2, [c.id]: Math.max(1, (q2[c.id] || 1) - 1) }))}
+                style={{ width: 28, height: 28, background: '#0a1520', border: '1px solid #1a3040', color: '#a0c0d0', borderRadius: 4, cursor: 'pointer', fontSize: 14 }}>−</button>
+              <span style={{ color: '#a0c0d0', fontSize: 13, minWidth: 20, textAlign: 'center' }}>{q}</span>
+              <button onClick={() => setQty(q2 => ({ ...q2, [c.id]: (q2[c.id] || 1) + 1 }))}
+                style={{ width: 28, height: 28, background: '#0a1520', border: '1px solid #1a3040', color: '#a0c0d0', borderRadius: 4, cursor: 'pointer', fontSize: 14 }}>+</button>
+              <button onClick={() => mkt.qty >= q && SFX.buy(); dispatch({ type: 'BUY', id: c.id, qty: q })}
+                disabled={mkt.qty < q || state.credits < mkt.price * q}
+                style={{ flex: 1, padding: '6px', background: '#0a2a0a', border: '1px solid #1a5a1a', color: '#4ade80', borderRadius: 4, cursor: 'pointer', fontSize: 11, fontFamily: 'Space Mono, monospace', opacity: (mkt.qty < q || state.credits < mkt.price * q) ? 0.4 : 1 }}>
+                BUY {mkt.price * q}cr
+              </button>
+              {cargoQty > 0 && (
+                <button onClick={() => SFX.sell(); dispatch({ type: 'SELL', id: c.id, qty: Math.min(q, cargoQty) })}
+                  style={{ flex: 1, padding: '6px', background: '#2a1a0a', border: '1px solid #5a3a1a', color: '#d0a050', borderRadius: 4, cursor: 'pointer', fontSize: 11, fontFamily: 'Space Mono, monospace' }}>
+                  SELL ({cargoQty})
+                </button>
+              )}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function BarTab({ state, dispatch, sys }) {
+  const npcs = (sys.npcs || []).map(id => NPCS_DATA[id]).filter(Boolean)
+  if (npcs.length === 0) return <div style={{ color: '#4a6a80', textAlign: 'center', padding: 40 }}>The bar is empty.<br /><span style={{ fontSize: 11 }}>Even the barkeep looks surprised.</span></div>
+  return (
+    <div>
+      {npcs.map(npc => (
+        <button key={npc.id} onClick={() => dispatch({ type: 'START_DIALOGUE', npcId: npc.id })}
+          style={{ width: '100%', background: '#030a12', border: '1px solid #1a3040', borderRadius: 8, padding: 12, marginBottom: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, textAlign: 'left' }}>
+          <Portrait id={npc.portrait} size={56} />
+          <div>
+            <div style={{ color: '#c0d0e0', fontSize: 14, marginBottom: 2 }}>{npc.name}</div>
+            <div style={{ color: '#4a6a80', fontSize: 11 }}>{npc.title}</div>
+            <div style={{ color: '#607080', fontSize: 11, marginTop: 4, fontStyle: 'italic' }}>{npc.greeting}</div>
+          </div>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function ShipyardTab({ state, dispatch }) {
+  return (
+    <div>
+      <div style={{ color: '#607080', fontSize: 12, marginBottom: 16, lineHeight: 1.5 }}>
+        The Persistent Delusion is functional. It could be more functional.
+      </div>
+      {UPGRADES.map(upg => {
+        const owned = state.upgrades.includes(upg.id)
+        const reqOwned = !upg.req || state.upgrades.includes(upg.req)
+        const canAfford = state.credits >= upg.cost
+        return (
+          <div key={upg.id} style={{ background: '#030a12', border: `1px solid ${owned ? '#1a4a2a' : '#1a3040'}`, borderRadius: 8, padding: 12, marginBottom: 8, opacity: !reqOwned ? 0.5 : 1 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+              <div>
+                <span style={{ color: owned ? '#4ade80' : '#a0c0d0', fontSize: 13 }}>{owned ? '✓ ' : ''}{upg.name}</span>
+                <div style={{ color: '#506080', fontSize: 11, marginTop: 3 }}>{upg.desc}</div>
+                {upg.req && !state.upgrades.includes(upg.req) && (
+                  <div style={{ color: '#6a4a4a', fontSize: 10, marginTop: 3 }}>Requires: {UPGRADES.find(u => u.id === upg.req)?.name}</div>
+                )}
+              </div>
+              <span style={{ color: owned ? '#4ade80' : canAfford ? '#c0d0e0' : '#f87171', fontSize: 13, marginLeft: 12, whiteSpace: 'nowrap' }}>{owned ? 'OWNED' : `${upg.cost}cr`}</span>
+            </div>
+            {!owned && reqOwned && (
+              <button onClick={() => SFX.upgrade(); dispatch({ type: 'BUY_UPGRADE', id: upg.id })}
+                disabled={!canAfford}
+                style={{ width: '100%', padding: '8px', background: canAfford ? '#0a2a4a' : '#050d18', border: `1px solid ${canAfford ? '#2a5a8a' : '#1a2a3a'}`, color: canAfford ? '#4aafe0' : '#3a5a70', borderRadius: 4, cursor: canAfford ? 'pointer' : 'default', fontSize: 11, fontFamily: 'Space Mono, monospace' }}>
+                INSTALL
+              </button>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════
+// DIALOGUE
+// ═══════════════════════════════════════════════════════════
+
+function DialogueScreen({ state, dispatch }) {
+  const { npcId, nodeId } = state.dialogue
+  const npc = NPCS_DATA[npcId]
+  if (!npc) return null
+  const node = npc.tree[nodeId]
+  if (!node) return null
+
+  const text = node.text.replace('{name}', state.playerName)
+
+  return (
+    <div style={{ fontFamily: 'Space Mono, monospace', maxWidth: 520, margin: '0 auto', padding: '16px' }}>
+      {/* NPC Header */}
+      <div style={{ background: '#030a12', border: '1px solid #1a3040', borderRadius: 8, padding: 16, marginBottom: 12, display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+        <Portrait id={npc.portrait} size={80} />
+        <div>
+          <div style={{ color: '#c0e0f0', fontSize: 16, marginBottom: 2 }}>{npc.name}</div>
+          <div style={{ color: '#4a6a80', fontSize: 11, marginBottom: 12 }}>{npc.title}</div>
+          <div style={{ color: '#304050', fontSize: 11 }}>◦ ◦ ◦</div>
+        </div>
+      </div>
+
+      {/* Dialogue text */}
+      <div style={{ background: '#030a12', border: '1px solid #1a3040', borderRadius: 8, padding: 16, marginBottom: 12 }}>
+        <div style={{ color: '#a0b8c0', fontSize: 13, lineHeight: 1.8, whiteSpace: 'pre-line' }}>{text}</div>
+      </div>
+
+      {/* Options */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {node.options.map((opt, i) => {
+          // Check if option is locked due to flag requirements
+          if (opt.requireFlag && !state.flags[opt.requireFlag]) return null
+          const hasCargoReq = opt.requireCargo && (() => {
+            const c = state.cargo.find(x => x.id === opt.requireCargo)
+            return !c || c.qty < opt.requireQty
+          })()
+          return (
+            <button key={i} onClick={() => !hasCargoReq && SFX.click(); dispatch({ type: 'CHOOSE_OPTION', option: opt })}
+              style={{
+                padding: '12px 16px', background: hasCargoReq ? '#050d18' : '#060f1a',
+                border: `1px solid ${hasCargoReq ? '#1a2030' : opt.flag ? '#2a4a2a' : '#1a3040'}`,
+                color: hasCargoReq ? '#304050' : opt.flag ? '#70a070' : '#8090a0',
+                borderRadius: 6, cursor: hasCargoReq ? 'default' : 'pointer',
+                fontSize: 12, fontFamily: 'Space Mono, monospace', textAlign: 'left', lineHeight: 1.4
+              }}>
+              <span style={{ color: hasCargoReq ? '#303040' : opt.flag ? '#4a8a4a' : '#2a5a8a' }}>▶ </span>
+              {opt.text}
+              {opt.flagLabel && <span style={{ display: 'block', fontSize: 10, color: '#4a6a4a', marginTop: 4 }}>{opt.flagLabel}</span>}
+              {hasCargoReq && <span style={{ display: 'block', fontSize: 10, color: '#6a3a3a', marginTop: 2 }}>Requires {opt.requireQty} {opt.requireCargo}</span>}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════
+// COMBAT
+// ═══════════════════════════════════════════════════════════
+
+function CombatScreen({ state, dispatch }) {
+  if (!state.combat) return null
+  const { enemy, playerAP, playerEvading, turn } = state.combat
+  const { current: enemyAct, next: enemyNext } = getEnemyAction(enemy, enemy.patternIdx)
+
+  const hullPct = (state.hull / state.maxHull) * 100
+  const enemyPct = (enemy.hull / enemy.maxHull) * 100
+
+  return (
+    <div style={{ fontFamily: 'Space Mono, monospace', maxWidth: 520, margin: '0 auto', padding: '16px' }}>
+      <div style={{ color: '#304050', fontSize: 10, letterSpacing: 3, marginBottom: 8 }}>COMBAT — TURN {turn}</div>
+
+      {/* Enemy */}
+      <div style={{ background: '#0a0505', border: '1px solid #3a1010', borderRadius: 8, padding: 14, marginBottom: 10 }}>
+        <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 10 }}>
+          <Portrait id={enemy.id} size={64} />
+          <div style={{ flex: 1 }}>
+            <div style={{ color: '#e0c0a0', fontSize: 14 }}>{enemy.name}</div>
+            <div style={{ color: '#705040', fontSize: 11, marginBottom: 8 }}>Hull: {enemy.hull}/{enemy.maxHull}</div>
+            <div style={{ height: 6, background: '#200a0a', borderRadius: 3, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${enemyPct}%`, background: '#a04030', borderRadius: 3, transition: 'width 0.3s' }} />
+            </div>
+          </div>
+        </div>
+        <div style={{ background: '#0d0808', border: '1px solid #2a1010', borderRadius: 6, padding: 10 }}>
+          <div style={{ color: '#604040', fontSize: 10, marginBottom: 4, letterSpacing: 1 }}>ENEMY INTENT</div>
+          <div style={{ color: '#d08060', fontSize: 13 }}>NOW: {formatIntent(enemyAct, enemy.damage)}</div>
+          <div style={{ color: '#5a3a2a', fontSize: 11, marginTop: 4 }}>NEXT: {formatIntent(enemyNext, enemy.damage)}</div>
+        </div>
+      </div>
+
+      {/* Combat log */}
+      <div style={{ background: '#030a12', border: '1px solid #1a3040', borderRadius: 8, padding: 10, marginBottom: 10, maxHeight: 100, overflowY: 'auto' }}>
+        {state.combatLog.map((l, i) => (
+          <div key={i} style={{ color: i === 0 ? '#a0c0d0' : '#3a5a6a', fontSize: 11, marginBottom: 2, lineHeight: 1.4 }}>{l}</div>
+        ))}
+      </div>
+
+      {/* Player status */}
+      <div style={{ background: '#030a12', border: '1px solid #1a3040', borderRadius: 8, padding: 12, marginBottom: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+          <span style={{ color: '#4a8a8a', fontSize: 12 }}>Persistent Delusion</span>
+          <span style={{ color: hullPct < 30 ? '#f87171' : '#4ade80', fontSize: 12 }}>Hull: {state.hull}/{state.maxHull}</span>
+        </div>
+        <div style={{ height: 6, background: '#0a1520', borderRadius: 3, overflow: 'hidden', marginBottom: 8 }}>
+          <div style={{ height: '100%', width: `${hullPct}%`, background: hullPct < 30 ? '#f87171' : '#4ade80', borderRadius: 3, transition: 'width 0.3s' }} />
+        </div>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <span style={{ color: '#4a6a80', fontSize: 11 }}>AP: {[...Array(3)].map((_, i) => <span key={i} style={{ color: i < playerAP ? '#4aaad0' : '#1a2a3a' }}>◆</span>)}</span>
+          {playerEvading && <span style={{ color: '#5090d0', fontSize: 11 }}>🛡 EVADING</span>}
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+        <CombatBtn label="FIRE (1 AP)" sub={`~${playerFireDamage(state.weapons) - 3}–${playerFireDamage(state.weapons) + 3} dmg`} color="#d07050" disabled={playerAP < 1} onClick={() => { SFX.fire(); dispatch({ type: 'COMBAT_ACTION', act: 'fire' }) }} />
+        <CombatBtn label="OVERLOAD (2 AP)" sub="Double damage" color="#d0a050" disabled={playerAP < 2} onClick={() => { SFX.fire(); dispatch({ type: 'COMBAT_ACTION', act: 'overload' }) }} />
+        <CombatBtn label="EVADE (1 AP)" sub="Half incoming dmg" color="#5090d0" disabled={playerAP < 1} onClick={() => { SFX.click(); dispatch({ type: 'COMBAT_ACTION', act: 'evade' }) }} />
+        <CombatBtn label="REPAIR (2 AP)" sub={`+${playerRepairAmount(state.shields)} hull`} color="#4ade80" disabled={playerAP < 2} onClick={() => { SFX.buy(); dispatch({ type: 'COMBAT_ACTION', act: 'repair' }) }} />
+      </div>
+      <CombatBtn label="END TURN →" sub="Enemy acts, AP refills" color="#a0a0d0" disabled={false} onClick={() => { SFX.click(); dispatch({ type: 'COMBAT_ACTION', act: 'end_turn' }) }} full />
+    </div>
+  )
+}
+
+function CombatBtn({ label, sub, color, disabled, onClick, full }) {
+  return (
+    <button onClick={!disabled ? onClick : undefined}
+      style={{ gridColumn: full ? '1 / -1' : undefined, padding: '10px', background: disabled ? '#050d18' : '#060f1a', border: `1px solid ${disabled ? '#1a2030' : '#2a3a4a'}`, color: disabled ? '#304050' : color, borderRadius: 6, cursor: disabled ? 'default' : 'pointer', fontFamily: 'Space Mono, monospace', textAlign: 'left', opacity: disabled ? 0.5 : 1 }}>
+      <div style={{ fontSize: 11 }}>{label}</div>
+      <div style={{ fontSize: 10, opacity: 0.7 }}>{sub}</div>
+    </button>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════
+// EVENT
+// ═══════════════════════════════════════════════════════════
+
+function EventScreen({ state, dispatch }) {
+  if (!state.event) return null
+  const ev = state.event
+  return (
+    <div style={{ fontFamily: 'Space Mono, monospace', maxWidth: 520, margin: '0 auto', padding: 24 }}>
+      <div style={{ color: '#4a6a80', fontSize: 10, letterSpacing: 3, marginBottom: 16 }}>HYPERSPACE EVENT</div>
+      <div style={{ background: '#030a12', border: '1px solid #1a3040', borderRadius: 8, padding: 20, marginBottom: 16 }}>
+        <p style={{ color: '#a0b8c0', fontSize: 14, lineHeight: 1.8, margin: 0 }}>{ev.text}</p>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {ev.options.map((opt, i) => {
+          const cantAfford = opt.type === 'pay_repair' && state.credits < opt.value
+          const noCargo = opt.type === 'info_trade' && (() => { const c = state.cargo.find(x => x.id === opt.need); return !c || c.qty < opt.qty })()
+          const disabled = cantAfford || noCargo
+          return (
+            <button key={i} onClick={() => !disabled && dispatch({ type: 'RESOLVE_EVENT', option: opt })}
+              style={{ padding: '14px 16px', background: disabled ? '#050d18' : '#060f1a', border: '1px solid #1a3040', color: disabled ? '#304050' : '#8090a0', borderRadius: 6, cursor: disabled ? 'default' : 'pointer', fontSize: 12, fontFamily: 'Space Mono, monospace', textAlign: 'left', lineHeight: 1.4, opacity: disabled ? 0.5 : 1 }}>
+              <span style={{ color: '#2a5a8a' }}>▶ </span>{opt.text}
+              {cantAfford && <span style={{ display: 'block', fontSize: 10, color: '#6a3a3a', marginTop: 2 }}>Can't afford this</span>}
+              {noCargo && <span style={{ display: 'block', fontSize: 10, color: '#6a3a3a', marginTop: 2 }}>Not enough {opt.need} in cargo</span>}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════
+// LOG SCREEN
+// ═══════════════════════════════════════════════════════════
+
+function LogScreen({ state, dispatch }) {
+  return (
+    <div style={{ fontFamily: 'Space Mono, monospace', maxWidth: 520, margin: '0 auto', padding: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <div style={{ color: '#304050', fontSize: 11, letterSpacing: 3 }}>CAPTAIN'S LOG</div>
+        <button onClick={() => dispatch({ type: 'GOTO_MAP' })} style={{ background: 'none', border: '1px solid #1a3040', color: '#4a6a80', padding: '4px 12px', borderRadius: 4, cursor: 'pointer', fontSize: 11, fontFamily: 'Space Mono, monospace' }}>BACK</button>
+      </div>
+      <div style={{ background: '#030a12', border: '1px solid #1a3040', borderRadius: 8, padding: 16 }}>
+        {state.gameLog.map((entry, i) => (
+          <div key={i} style={{ color: i === 0 ? '#a0b8c0' : `hsl(200, 20%, ${Math.max(25, 55 - i * 1.5)}%)`, fontSize: 12, marginBottom: 8, lineHeight: 1.6, borderLeft: i === 0 ? '2px solid #2a5a8a' : '2px solid #1a2a3a', paddingLeft: 10 }}>
+            {entry}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════
+// MAIN GAME
+// ═══════════════════════════════════════════════════════════
+
+function LongRoute() {
+  const [state, dispatch] = useReducer(reducer, null, makeInitialState)
+
+  const wrappedDispatch = useCallback((action) => {
+    dispatch(action)
+  }, [])
+
+  // Auto-clear notification
+  useEffect(() => {
+    if (state.notification) {
+      const t = setTimeout(() => dispatch({ type: 'CLEAR_NOTIFY' }), 3000)
+      return () => clearTimeout(t)
+    }
+  }, [state.notification])
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#010a14', color: '#a0c0d0' }}>
+      {/* Notification */}
+      {state.notification && (
+        <div style={{ position: 'fixed', top: 50, left: '50%', transform: 'translateX(-50%)', background: '#0a1a2a', border: '1px solid #2a5a8a', color: '#80c0e0', padding: '10px 20px', borderRadius: 8, fontSize: 12, fontFamily: 'Space Mono, monospace', zIndex: 200, maxWidth: '90vw', textAlign: 'center', boxShadow: '0 4px 20px rgba(0,30,60,0.8)' }}>
+          {state.notification}
+        </div>
+      )}
+
+      {state.view === 'nameEntry' ? (
+        <NameEntry dispatch={wrappedDispatch} />
+      ) : (
+        <>
+          <HUD state={state} dispatch={wrappedDispatch} />
+          <div style={{ paddingBottom: 24 }}>
+            {state.view === 'map'      && <GalaxyMap state={state} dispatch={wrappedDispatch} />}
+            {state.view === 'station'  && <StationView state={state} dispatch={wrappedDispatch} />}
+            {state.view === 'dialogue' && <DialogueScreen state={state} dispatch={wrappedDispatch} />}
+            {state.view === 'combat'   && <CombatScreen state={state} dispatch={wrappedDispatch} />}
+            {state.view === 'event'    && <EventScreen state={state} dispatch={wrappedDispatch} />}
+            {state.view === 'log'      && <LogScreen state={state} dispatch={wrappedDispatch} />}
+            {state.view === 'ledger'   && <LedgerScreen state={state} dispatch={wrappedDispatch} />}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(LongRoute))
+</script>
+<script>if('serviceWorker'in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}</script>
+</body></html>

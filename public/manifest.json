@@ -1,0 +1,13 @@
+{
+  "name": "The Long Route",
+  "short_name": "Long Route",
+  "description": "A space trading adventure. Find the truth about Edda Vance.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#010a14",
+  "theme_color": "#010a14",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
