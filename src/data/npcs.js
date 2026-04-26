@@ -5,44 +5,111 @@ export const NPCS = {
     title: 'Dock Master',
     portrait: 'grex',
     greeting: "Name. Ship registration. Purpose of visit. In that order.",
+    entry: [
+      { requireMinVisits: 4, node: 'root_familiar' },
+      { node: 'root' },
+    ],
     tree: {
       root: {
         text: "You bought the Persistent Delusion? From the Kelloway yard?\n\nPrevious owner: Edda Vance. She walked out of here seven years ago in a hurry. Owed me forty credits. I mention this not because I expect reimbursement, but because I want it on the record that I remember.",
         options: [
-          { text: "Who was Edda Vance?", go: 'edda' },
-          { text: "What's worth trading here?", go: 'trade' },
-          { text: "That'll be all.", go: null },
+          { text: '"I bought her from the Kelloway yard. Came with history."', go: 'edda' },
+          { text: '"What moves well through here?"', go: 'trade' },
+          // Unlocked once Grex has mentioned forty credits being personal:
+          { text: '"Forty credits is a specific amount to remember."', go: 'forty_credits',
+            requireFlag: 'grex_edda_known' },
+          // Unlocked once he mentions the agents:
+          { text: '"What did the agents look like?"', go: 'agents_look',
+            requireFlag: 'grex_combine_mentioned' },
+          { text: '"What did you tell them?"', go: 'agents_told',
+            requireFlag: 'grex_combine_mentioned' },
+          { text: '[Leave without asking anything.]', go: null, flag: 'grex_quiet' },
         ],
       },
       edda: {
         text: "Independent trader. Good reputation. She ran information: nav charts, data cores, for whoever paid. Careful. Very careful.\n\nThen she went quiet. Then she left the ship in impound and walked through that airlock. Never came back.",
+        flagsOnEnter: ['grex_edda_known'],
         options: [
-          { text: "Did she say where she was going?", go: 'edda_where', flag: 'edda_clue_1', flagLabel: '🔍 Clue 1: Grex remembers' },
-          { text: "Who else knew her?", go: 'edda_contacts' },
-          { text: "Back to trading.", go: 'trade' },
+          { text: '"Did she say where she was going?"', go: 'edda_where',
+            flag: 'edda_clue_1', flagLabel: '🔍 Clue 1: Grex remembers' },
+          { text: '"Who else knew her?"', go: 'edda_contacts' },
+          { text: '[Back to the manifest.]', go: 'trade' },
         ],
       },
       edda_where: {
         text: "Last thing she said: 'Don't let them impound the ship.' Then she left.\n\nThe Combine asked about her three weeks later. Two agents. Very polished. I gave them nothing — Edda was thorough. They left a card. I filed it in the recycling unit.",
+        flagsOnEnter: ['grex_combine_mentioned'],
         options: [
-          { text: "The Combine asked about her.", go: null },
-          { text: "Who else might know?", go: 'edda_contacts' },
+          { text: '"Who else might know?"', go: 'edda_contacts' },
+          { text: '[Don\'t push. Just nod.]', go: 'root', flag: 'grex_listened' },
         ],
       },
       edda_contacts: {
         text: "Mara Solis — she's over there — they traded information sometimes. And there's an old navigator at Meridian Cross called Vasquez. If you're trying to find her — which I'd advise against — that's where I'd start.",
         options: [
-          { text: "Why advise against it?", go: 'warning' },
-          { text: "Thanks, Grex.", go: null },
+          { text: '"Why advise against it?"', go: 'warning' },
+          { text: '"Thanks, Grex."', go: null },
         ],
       },
       warning: {
         text: "Because the Combine asked about her. The Combine does not ask casual questions.\n\nI am a simple man, {name}. I find it useful to notice when things are hidden and choose not to look.",
-        options: [{ text: "I appreciate the advice.", go: null }],
+        options: [{ text: '"I appreciate the advice."', go: null }],
+      },
+      forty_credits: {
+        text: "[A thin smile.]\n\nIt's the amount that keeps it personal without making it actionable. She knew exactly what she was doing.\n\nI keep records. Most things slip. That doesn't.",
+        options: [
+          { text: "\"You think she'll pay one day?\"", go: 'pay_one_day' },
+          { text: '[Back to it.]', go: 'root' },
+        ],
+      },
+      pay_one_day: {
+        text: "I think she might. If she's still alive. Forty credits says she's still alive — if anyone in the sector hands me forty credits with a particular look on their face, I will know.\n\nUntil then, the debt is the bookmark.",
+        options: [{ text: '[Nod.]', go: 'root' }],
+      },
+      agents_look: {
+        text: "Polished. Not Combine military polished — corporate polished. Suits cut a particular way. They didn't argue. They didn't have to.\n\nMid-thirties. One did the talking. The other watched my hands.",
+        options: [{ text: '"Useful."', go: 'root', flag: 'grex_agents_described' }],
+      },
+      agents_told: {
+        text: "Nothing they didn't already know. Edda's registration. The dates she was here. The route she usually took.\n\nI didn't tell them about the lockbox. They didn't ask, which means they didn't know to. Which means Edda was thorough.",
+        options: [{ text: '"What lockbox?"', go: 'lockbox' }],
+      },
+      lockbox: {
+        text: "I don't know. She mentioned it once, in passing. I know she had one and I know it wasn't here. That's the extent of what I know.\n\nIt's possible Mara knows. They were closer than I was.",
+        options: [{ text: '[Make a note. Move on.]', go: 'root', flag: 'grex_lockbox_known' }],
       },
       trade: {
         text: "Components are cheap here. Ore and food are scarce. Bellhaven does good food if you don't mind the inspection queue.",
-        options: [{ text: "Good to know.", go: null }],
+        options: [{ text: '"Good to know."', go: 'root' }],
+      },
+
+      // Visit 4+ — Grex notices you keep showing up.
+      root_familiar: {
+        text: "[He looks up sooner than he used to.]\n\nYou're back. Most traders pass through. You don't.\n\nWhat'd you find?",
+        options: [
+          { text: '"Pieces. Slowly."', go: 'familiar_pieces' },
+          { text: '"More than I expected."', go: 'familiar_more' },
+          { text: '"Less than I hoped."', go: 'familiar_less' },
+          { text: '[Nothing. Just here for the manifest.]', go: 'trade' },
+          { text: '[Forty credits, with a particular look on your face.]', go: 'pay_debt',
+            requireMinFrontier: 1, requireFlag: 'grex_lockbox_known' },
+        ],
+      },
+      familiar_pieces: {
+        text: "Pieces is honest. People who say more than that are usually lying or selling something.\n\nTake the time. She did.",
+        options: [{ text: '[Continue.]', go: 'root' }],
+      },
+      familiar_more: {
+        text: "[A small lift of the eyebrows.]\n\nThen you're further along than the agents got. I'd say good luck, but the time for luck is probably past.",
+        options: [{ text: '[Continue.]', go: 'root' }],
+      },
+      familiar_less: {
+        text: "It's not over. She left a trail. Trails take time.\n\nThe agents took two months. You've got time.",
+        options: [{ text: '[Continue.]', go: 'root' }],
+      },
+      pay_debt: {
+        text: "[Long silence. He counts the forty credits very slowly.]\n\n...alright.\n\n[He files it under a new heading.]\n\nTell her, when you find her, that the ledger is closed. And that I would still like a drink, on her, sometime.",
+        options: [{ text: '[Nod. Leave.]', go: null, flag: 'grex_debt_paid', flagLabel: '✓ Edda\'s old tab settled' }],
       },
     },
   },
@@ -174,11 +241,36 @@ export const NPCS = {
     title: 'Barkeep, Meridian Cross',
     portrait: 'otto',
     greeting: "Sit down. What are you drinking. That was not a question.",
+    entry: [
+      // After visiting three search-pattern systems, Otto reads it from across the bar.
+      { requireVisited: ['portsmith', 'sump', 'iron_drift'], requireNotFlag: 'otto_intro',
+        node: 'root_search_pattern' },
+      { node: 'root' },
+    ],
     tree: {
+      root_search_pattern: {
+        text: "[Before you sit down.]\n\nYou've been busy. Portsmith, The Sump, Iron Drift — that's not a trade route. That's a search pattern.\n\nDrink first. Then tell me what you're looking for.",
+        options: [
+          { text: '"Edda Vance."', go: 'edda', flag: 'otto_intro', flagLabel: '🗝 Otto knows what you\'re after' },
+          { text: '"It\'s personal."', go: 'sp_personal' },
+          { text: '"Let\'s start with the drink."', go: 'sp_drink' },
+        ],
+      },
+      sp_personal: {
+        text: "[He sets the glass down.]\n\nPersonal is fair. Personal stays personal. But if you change your mind, you know where I am.",
+        options: [{ text: '[Drink.]', go: 'root' }],
+      },
+      sp_drink: {
+        text: "Wise. Most things go better with the drink first.\n\n[He pours. The glass is cleaner than you expected.]",
+        options: [
+          { text: '"Thank you."', go: 'root' },
+          { text: '"Edda Vance."', go: 'edda', flag: 'otto_intro' },
+        ],
+      },
       root: {
         text: "Everyone who comes through thinks they're passing through. Nobody is. Meridian Cross IS the destination — they just haven't admitted it yet.",
         options: [
-          { text: "Information about Edda Vance.", go: 'edda' },
+          { text: "Information about Edda Vance.", go: 'edda', flag: 'otto_intro' },
           { text: "Who's the old man in the corner?", go: 'vasquez' },
           { text: "Tell me about New Geneva.", go: 'geneva' },
           { text: "Just the drink.", go: null },
@@ -591,6 +683,7 @@ export const NPCS = {
     tree: {
       root: {
         text: "The Persistent Delusion. Previously registered to one Edda Vance. Outstanding administrative queries against that registration.",
+        flagsOnEnter: ['pellandra_met'],
         options: [
           { text: "What kind of queries?", go: 'queries' },
           { text: "She's been gone seven years.", go: 'gone' },
@@ -843,74 +936,158 @@ export const NPCS = {
     portrait: 'yolanda',
     greeting: "Manifest, registration, port of last call. In that order. The queue's behind you.",
     entry: [
-      { requireFlag: 'yolanda_thaw', node: 'root_thawed' },
-      { requireFlag: 'yolanda_seen', node: 'root_second' },
+      // If your Combine standing has dropped past -20, she stops talking.
+      { requireMaxCombine: -21, requireFlag: 'yolanda_seen', node: 'root_closed' },
+      // If she has just learned about your standing dropping, she opens v6 — formal caution.
+      { requireMinVisits: 2, requireMaxCombine: -10, node: 'root_caution' },
+      // Trust ladder.
+      { requireMinVisits: 5, requireFlag: 'yolanda_warm', node: 'root_logs' },
+      { requireMinVisits: 4, node: 'root_v4' },
+      { requireMinVisits: 3, node: 'root_v3' },
+      { requireMinVisits: 2, node: 'root_v2' },
       { node: 'root' },
     ],
     tree: {
+      // Visit 1: by the book.
       root: {
         text: "Welcome to Portsmith. Persistent Delusion — flagged for routine secondary checks. This is normal. It is also tedious.\n\n[She processes your paperwork at the speed of someone who has done this 11,000 times.]\n\nYou're cleared. Proceed.",
+        flagsOnEnter: ['yolanda_seen'],
         options: [
-          { text: "What are the secondary checks for?", go: 'first_secondary', flag: 'yolanda_seen' },
-          { text: "Thanks.", go: null, flag: 'yolanda_seen' },
+          { text: '"What are the secondary checks for?"', go: 'r1_what' },
+          { text: '"Thanks."', go: null },
+          { text: '[Comply silently.]', go: null },
         ],
       },
-      first_secondary: {
+      r1_what: {
         text: "Standard procedure for vessels with prior administrative queries. Yours has several. I am not authorised to discuss them.\n\n[She doesn't look up.]",
-        options: [{ text: "Right.", go: null }],
+        options: [{ text: '[Nod. Leave.]', go: null }],
       },
 
-      root_second: {
+      // Visit 2: she's slightly faster. Possible to thaw with an offhand remark.
+      root_v2: {
         text: "Persistent Delusion. Again. Hello.\n\n[She processes your forms with the air of someone who could write them with her eyes closed.]\n\nThis section is faster than usual. Don't tell my supervisor.",
         options: [
-          { text: "Long shift?", go: 'second_chitchat' },
-          { text: "Anything new on the file?", go: 'second_file' },
-          { text: "Thanks.", go: null },
+          { text: '"Long shift?"', go: 'r2_shift' },
+          { text: '"Anything new on the file?"', go: 'r2_file' },
+          { text: '[Don\'t take the bait. Just thanks.]', go: null },
         ],
       },
-      second_chitchat: {
+      r2_shift: {
         text: "Twelve hours on, four hours off. The ratio is illegal in three jurisdictions. Combine licensing is not one of them.\n\n[A pause.]\n\nDon't say I said that.",
         options: [
-          { text: "Your secret's safe.", go: 'second_break', flag: 'yolanda_thaw', flagLabel: '🤝 Yolanda lets her guard down' },
-          { text: "I'll keep moving.", go: null },
+          { text: '"Your secret\'s safe."', go: 'r2_thaw' },
+          { text: '"I\'ll keep moving."', go: null },
         ],
       },
-      second_break: {
+      r2_thaw: {
         text: "[A small smile, very fast.]\n\nNext time — bring something other than freight to talk about. There are eight people on this concourse who have actual conversations. None of them work in this office.",
-        options: [{ text: "Noted.", go: null }],
+        options: [{ text: '"Noted."', go: null }],
       },
-      second_file: {
+      r2_file: {
         text: "Nothing I can share. Officially.\n\n[She looks at the file. Then at you. Then back at the file.]\n\nIf I were to give advice — which I am not — someone is paying close attention to where this ship goes. But of course I'm not giving you that advice.",
-        options: [{ text: "Of course not.", go: null }],
+        options: [{ text: '"Of course not."', go: null }],
       },
 
-      root_thawed: {
-        text: "[She doesn't bother with the manifest this time.]\n\nYou're back. The queue can wait for once. What can I do for you, Captain?",
+      // Visit 3: small talk. Earn rapport.
+      root_v3: {
+        text: "[A small nod as you arrive.]\n\nCaptain. Manifest. You can stop making me ask.\n\n[She processes faster than the queue requires.]",
         options: [
-          { text: "What have you been logging?", go: 'thawed_logs' },
-          { text: "What's the Combine flagging on me?", go: 'thawed_flags' },
-          { text: "How are you?", go: 'thawed_personal' },
-          { text: "Just checking in.", go: null },
+          { text: '"How\'s the office?"', go: 'r3_office' },
+          { text: '"Anything I should know about today\'s checks?"', go: 'r3_checks' },
+          { text: '"Forty credits says the kettle is broken."', go: 'r3_kettle' },
+          { text: '[Smile. Leave.]', go: null },
         ],
       },
-      thawed_logs: {
-        text: "Officially? Customs declarations.\n\nUnofficially: I've been keeping a notebook. Three years of it. Anomalies in shipping data — manifests that don't match the cargo, duty receipts that don't reconcile, ships that should not have been here.\n\nIt's not nothing. I haven't decided what it is.",
+      r3_office: {
+        text: "Same eight people. Same bad coffee. The plant on counter four died last week. Nobody has decided whose fault it is.\n\n[She tilts her head a fraction.]\n\nThank you for asking. Most people don't.",
+        options: [{ text: '[Nod. Leave.]', go: null }],
+      },
+      r3_checks: {
+        text: "Nothing flagged today. Tomorrow might be different.\n\n[Quieter.]\n\nThere are flags going up across the sector. Not for you specifically. For the kind of route you're flying.",
+        options: [{ text: '"Understood."', go: null }],
+      },
+      r3_kettle: {
+        text: "[An actual laugh, brief and surprised.]\n\nIt is. The kettle is broken. We've had three forms in to fix it and one of them was filed twice.\n\n...you'll do, Captain. You'll do.",
+        options: [{ text: '[Leave smiling.]', go: null, flag: 'yolanda_warmer' }],
+      },
+
+      // Visit 4: she's properly warm now. The Combine watch comes up.
+      root_v4: {
+        text: "[She doesn't bother with the manifest this time.]\n\nYou're back. The queue can wait for once.\n\nWhat can I do for you, Captain?",
         options: [
-          { text: "Show me.", go: 'thawed_logs_share', flag: 'yolanda_logs', flagLabel: '📓 Yolanda\'s anomaly logs' },
-          { text: "Keep it safe.", go: null },
+          { text: '"What\'s the Combine flagging on me?"', go: 'r4_flags' },
+          { text: '"How are you?"', go: 'r4_personal' },
+          { text: '"Tell me about your job."', go: 'r4_job' },
+          { text: '[Just here for the manifest.]', go: null },
         ],
       },
-      thawed_logs_share: {
-        text: "[She slides a folded sheet across.]\n\nNot the whole thing. A summary. Names of ships, dates, and a cross-reference column you'll understand if you've been around.\n\nIf this matters to anyone you trust, it's yours. I copied it slowly so the office monitor wouldn't notice.",
-        options: [{ text: "It matters. Thank you.", go: null }],
-      },
-      thawed_flags: {
+      r4_flags: {
         text: "[Lower voice.]\n\nYour ship is on a watch list. Not the public one. The other one. Combine Executive — three levels above me — has standing orders to be alerted when you dock.\n\nThe alert is informational, not enforcement. They want to know where you go. They are not, currently, telling anyone to stop you.\n\nThis suggests they want to follow you to something.",
-        options: [{ text: "I appreciate it.", go: null, flag: 'combine_attention', flagLabel: '👁 Combine is watching' }],
+        options: [{ text: '"I appreciate it."', go: null,
+          flag: 'combine_attention', flagLabel: '👁 Combine is watching' }],
       },
-      thawed_personal: {
-        text: "Bored. Underpaid. Furious in a quiet, professional way.\n\n[She gestures at the office.]\n\nFifteen years of this. It pays. It's secure. I can't decide if that's worse or better.\n\nDon't worry about me. The ship is more interesting than I am.",
-        options: [{ text: "Maybe not for long.", go: null }],
+      r4_personal: {
+        text: "Bored. Underpaid. Furious in a quiet, professional way.\n\n[She gestures at the office.]\n\nFifteen years of this. It pays. It's secure. I can't decide if that's worse or better.",
+        options: [
+          { text: '"Maybe not for long."', go: 'r4_warm', flag: 'yolanda_warm',
+            flagLabel: '🤝 Yolanda is willing to share what she\'s found' },
+          { text: '[Don\'t push.]', go: null, flag: 'yolanda_warm',
+            flagLabel: '🤝 Yolanda noticed you didn\'t push' },
+        ],
+      },
+      r4_warm: {
+        text: "[A long look.]\n\nMaybe not. Come back. There's something I'd like to show you, but not at the desk.",
+        options: [{ text: '"I\'ll be back."', go: null }],
+      },
+      r4_job: {
+        text: "Officially: I process cargo paperwork. Unofficially: I read every manifest and I notice when one of them is lying.\n\n[Beat.]\n\nThat used to be a private hobby. Then it became three years of notes.",
+        options: [
+          { text: '"What kind of notes?"', go: 'r4_notes' },
+          { text: '[Leave it alone for now.]', go: null, flag: 'yolanda_warm' },
+        ],
+      },
+      r4_notes: {
+        text: "[Quietly.]\n\nNotes. The kind that are worth nothing on their own. Possibly worth something to someone with the rest of the picture.\n\nCome back. I want to think about whether to give them to you.",
+        options: [{ text: '[Leave.]', go: null, flag: 'yolanda_warm' }],
+      },
+
+      // Visit 5+ (with yolanda_warm): she shares the logs.
+      root_logs: {
+        text: "[She doesn't even pretend to look at the manifest.]\n\nFive visits. That's enough for me. I've decided.\n\n[She slides a folded sheet across the counter.]\n\nThree years of notes. Names of ships, dates, a cross-reference column. Half of it makes sense if you've been to the right systems. The rest will make sense to someone who's been to the systems I haven't.\n\nIt's yours. I copied it slowly so the office monitor wouldn't notice.",
+        options: [
+          { text: '"This matters. Thank you."', go: null,
+            flag: 'yolanda_logs', flagLabel: '📓 Yolanda\'s anomaly logs' },
+          { text: '"Why give them to me?"', go: 'logs_why',
+            flag: 'yolanda_logs', flagLabel: '📓 Yolanda\'s anomaly logs' },
+        ],
+      },
+      logs_why: {
+        text: "[A flat look.]\n\nBecause if I give them to my supervisor they get filed. If I give them to the Combine they get classified. If I sit on them they stay private until I retire and then they get binned.\n\nYou go places. They might mean something where you're going.\n\nThat's worth more than the safer options.",
+        options: [{ text: '[Take them. Leave.]', go: null }],
+      },
+
+      // Standing too low: she shuts you down.
+      root_closed: {
+        text: "[She processes the manifest without looking up.]\n\nYour ship has accumulated several formal cautions. I am not in a position to discuss them informally.\n\nYou are cleared. Have a productive trade.\n\n[She does not make eye contact.]",
+        options: [{ text: '[Leave.]', go: null }],
+      },
+
+      // Standing dipping: formal caution dialogue (between visits 2-4 if combine has slipped).
+      root_caution: {
+        text: "[She looks up with the controlled tone of someone reading from a card.]\n\nI need to log a formal caution against your registration. You can contest it. I would suggest you do not make it worse before you do.\n\nSit down.",
+        options: [
+          { text: '[Sit. Listen.]', go: 'caution_listen' },
+          { text: '"What\'s the caution for?"', go: 'caution_for' },
+          { text: '[Walk out anyway.]', go: null, combineDelta: -3 },
+        ],
+      },
+      caution_listen: {
+        text: "Three flagged events in your travel record. Customs evasion, signal interference, encounter with a patrol cutter that ended in damage to that cutter.\n\nNone of these are conclusive. All of them are noted.\n\n[Quieter.]\n\nIf you can avoid attracting more, the cautions can be dropped. If not — they cannot.",
+        options: [{ text: '[Nod. Leave.]', go: null }],
+      },
+      caution_for: {
+        text: "I just told you. Three separate flagged events. The Combine reviews them quarterly.\n\nIf I am being completely honest — and I am paid not to be — the system is more interested in patterns than incidents. You can become uninteresting again.",
+        options: [{ text: '[Leave.]', go: null }],
       },
     },
   },
@@ -1023,6 +1200,169 @@ export const NPCS = {
       after_working: {
         text: "[A nod.]\n\nKeep working. I'll be here.",
         options: [{ text: "Thanks, Kid.", go: null }],
+      },
+    },
+  },
+
+  ines: {
+    id: 'ines',
+    name: 'Ines',
+    title: 'Junior Attaché, Combine Embassy',
+    portrait: 'ines',
+    greeting: "Welcome to the embassy. May I see your registration?",
+    entry: [
+      // The confrontation: two alerts have fired and she hasn't yet committed.
+      { requireFlags: ['ines_alert_1', 'ines_alert_2'],
+        requireNotFlag: 'ines_resolved',
+        node: 'confrontation' },
+      { requireMinVisits: 3, node: 'root_v3' },
+      { requireMinVisits: 2, node: 'root_v2' },
+      { node: 'root' },
+    ],
+    tree: {
+      root: {
+        text: "[She holds out her hand for the manifest. The handshake is a formality; the registration check is the actual purpose.]\n\nThe Persistent Delusion. Previously registered to one Edda Vance. Several outstanding administrative queries. Standard procedure to verify a transfer of ownership.\n\n[She doesn't look up.]",
+        flagsOnEnter: ['ines_seen'],
+        options: [
+          { text: '"Just routine trade."', go: 'r1_routine' },
+          { text: '"Why does my registration always come up?"', go: 'r1_why' },
+          { text: '[Comply in silence.]', go: 'r1_silent', inesTrustDelta: 5 },
+        ],
+      },
+      r1_routine: {
+        text: "Yes. Quite. The registration shows trade routes and your trade routes are... varied.\n\n[A small pause.]\n\nVery well. Cleared.",
+        options: [{ text: '[Leave.]', go: null, inesTrustDelta: 2 }],
+      },
+      r1_why: {
+        text: "[She looks up.]\n\nBecause it has standing queries. As I said.\n\n[Beat.]\n\n...if you have specific concerns about your file, the public-records office on the third floor handles those. I am not in a position to discuss the queries themselves.",
+        options: [
+          { text: '"Understood."', go: null, inesTrustDelta: 3 },
+          { text: '"They\'re about the previous owner, aren\'t they?"', go: 'r1_previous', inesTrustDelta: 5 },
+        ],
+      },
+      r1_previous: {
+        text: "[She sets the stamp down.]\n\nI am not in a position to confirm or deny the contents of an active query.\n\n[She looks at you again. There's something in her face that wasn't there a moment ago.]\n\nGood day, Captain.",
+        options: [{ text: '[Leave.]', go: null, inesTrustDelta: 5 }],
+      },
+      r1_silent: {
+        text: "[She processes the paperwork without looking up. The stamp comes down with a precise thud.]\n\nCleared. Have a productive trade.",
+        options: [{ text: '[Leave.]', go: null }],
+      },
+
+      root_v2: {
+        text: "[She looks up sooner this time. The registration check is faster.]\n\nCaptain. The Persistent Delusion. Same outstanding queries. Same procedure.\n\n[She processes silently for a moment, then.]\n\nYou've been to four systems since I last saw you. I notice these things.",
+        options: [
+          { text: '"Just trading."', go: 'r2_trading' },
+          { text: '"You read the registration logs?"', go: 'r2_logs' },
+          { text: '"Should I be worried that you notice?"', go: 'r2_worried' },
+        ],
+      },
+      r2_trading: {
+        text: "Of course.\n\n[She doesn't look convinced. She also doesn't push.]",
+        options: [{ text: '[Leave.]', go: null }],
+      },
+      r2_logs: {
+        text: "All staff do. It's the most boring part of the job and the only part where you can find anything genuinely interesting.\n\n[A pause.]\n\nIf I were not standing here in this uniform, I might say I'd been finding interesting things.",
+        options: [
+          { text: '"Like what?"', go: 'r2_like_what', inesTrustDelta: 5 },
+          { text: '"Interesting how?"', go: 'r2_interesting' },
+          { text: '[Don\'t push.]', go: null, inesTrustDelta: 8 },
+        ],
+      },
+      r2_like_what: {
+        text: "[She glances at the door.]\n\nA pattern of administrative queries that don't reconcile with the public record. I am not at liberty to elaborate. The fact that I am saying this much would be considered a breach.\n\nThank you for not asking again.",
+        options: [{ text: '[Leave.]', go: null }],
+      },
+      r2_interesting: {
+        text: "Inconsistencies. Boring inconsistencies. The kind that don't matter unless you're looking, and shouldn't matter even then.\n\n[A small shrug.]\n\nIt's an academic interest. I am very junior.",
+        options: [{ text: '[Leave.]', go: null }],
+      },
+      r2_worried: {
+        text: "[A short laugh.]\n\nNo. I'm a registration clerk. I notice things in the way you'd notice if a regular at your bar started coming in on different days.\n\nIt's not surveillance. It's a habit.",
+        options: [{ text: '[Leave.]', go: null }],
+      },
+
+      root_v3: {
+        text: "[The registration check is a formality now — she stamps it and slides it back without checking.]\n\nCaptain.\n\n[She looks at the door, then at you.]\n\nIs there anything you wanted to talk about that wasn't on the manifest? Strictly off the record.",
+        options: [
+          { text: '"You first."', go: 'r3_you_first' },
+          { text: '"What\'s being said about my ship?"', go: 'r3_ship', inesTrustDelta: 5 },
+          { text: '"I knew the previous owner."', go: 'r3_knew', inesTrustDelta: 10,
+            flag: 'ines_alert_1', flagLabel: '⚠ Ines is paying close attention' },
+          { text: '"Nothing I can share yet."', go: 'r3_nothing', inesTrustDelta: 5 },
+        ],
+      },
+      r3_you_first: {
+        text: "[A quick smile.]\n\nFair. I joined two years ago. I have a degree. I'm twenty-two. The job description said diplomatic policy work; the actual job is mostly stamping forms and watching for irregularities.\n\nYou're an irregularity. I've decided you're an interesting one.",
+        options: [{ text: '"That\'s either a compliment or a problem."', go: 'r3_either' }],
+      },
+      r3_either: {
+        text: "[A longer smile.]\n\nIt could be both.",
+        options: [{ text: '[Leave.]', go: null }],
+      },
+      r3_ship: {
+        text: "[She lowers her voice.]\n\nThe alerts are old. The standing watch is new — it was activated when you arrived in the sector. Renewed weekly.\n\nThat means someone above me wants to know where you are. Not to stop you, currently. Just to know.\n\nI'm not supposed to tell you that.",
+        options: [
+          { text: '"Why are you telling me?"', go: 'r3_why_tell' },
+          { text: '[Take it in. Leave.]', go: null, inesTrustDelta: 5 },
+        ],
+      },
+      r3_why_tell: {
+        text: "[A pause.]\n\nBecause when I joined, the briefing said the Combine's regional administration is transparent and audit-friendly. And then I started reading the actual files.\n\nBecause if you're not the bad person here, I'd like to know.",
+        options: [{ text: '[Leave thoughtfully.]', go: null, inesTrustDelta: 10 }],
+      },
+      r3_knew: {
+        text: "[She goes very still.]\n\nEdda Vance was — is — a person of significant interest. Knowing her is not, in itself, a crime.\n\n[Beat.]\n\nIs there more?",
+        options: [
+          { text: '"Yes. But not here."', go: 'r3_not_here' },
+          { text: '"I\'m looking for what she found."', go: 'r3_looking',
+            flag: 'ines_alert_2', flagLabel: '⚠ Second alert tripped' },
+        ],
+      },
+      r3_not_here: {
+        text: "[A long look.]\n\nI'd rather you trust me than rush this. Come back.",
+        options: [{ text: '[Leave.]', go: null }],
+      },
+      r3_looking: {
+        text: "[Absolute stillness.]\n\nI think I need to stop talking now. Come back when you've decided what you want from me.\n\nClear the embassy.",
+        options: [{ text: '[Leave.]', go: null }],
+      },
+      r3_nothing: {
+        text: "[She nods.]\n\nThat's also fine. Some things keep better when shared less.\n\nThe stamp is on your manifest. Have a productive trade.",
+        options: [{ text: '[Leave.]', go: null }],
+      },
+
+      // The conversation that has no good option.
+      confrontation: {
+        text: "[She doesn't ask for the manifest. She looks at the door, then at you.]\n\nThe Persistent Delusion. Edda Vance's ship. She disappeared seven years ago. The Combine has standing queries against her registration. Which means standing queries against you.\n\n[She looks at you directly for the first time.]\n\nI'm supposed to report this conversation. I'm standing here not reporting it.\n\nI would like to understand why I'm doing that.",
+        flagsOnEnter: ['ines_resolved'],
+        options: [
+          { text: '"I\'ll tell you everything. From the beginning."', go: 'cf_everything' },
+          { text: '"You already know why."', go: 'cf_already_know' },
+          { text: '"I can\'t tell you. But you\'re not wrong."', go: 'cf_not_wrong' },
+          { text: '"Report it if you need to."', go: 'cf_report' },
+        ],
+      },
+      cf_everything: {
+        text: "[She listens. The story takes thirty minutes. She does not interrupt once.]\n\n...\n\n[The room is very quiet. She stares at the desk. You cannot read her face.]",
+        options: [
+          { text: '[Wait for her to decide.]', go: null, inesOutcome: 'random' },
+        ],
+      },
+      cf_already_know: {
+        text: "[A pause that feels longer than it is.]\n\nYes. I do.\n\n[She closes her file. Picks up the stamp. Sets it down again.]\n\nThe registration is approved. Have a productive trade, Captain.\n\n[Quieter, almost to herself.]\n\nI'll find a way to be useful. Just don't make me decide too much, too fast.",
+        options: [{ text: '[Leave. Quietly.]', go: null,
+          flag: 'ines_asset', flagLabel: '🤝 Ines: inside source' }],
+      },
+      cf_not_wrong: {
+        text: "[She closes her eyes for a moment. Opens them.]\n\nThank you for not asking me to choose more than I have to.\n\nThe registration is approved. Whenever you come through, ask for me. I will tell you what I can.\n\nDon't make this a habit.",
+        options: [{ text: '[Leave.]', go: null,
+          flag: 'ines_asset', flagLabel: '🤝 Ines: inside source' }],
+      },
+      cf_report: {
+        text: "[A long silence.]\n\n[She picks up the stamp. Stamps the manifest. Slides it back.]\n\nNo, Captain. I won't report it. I will, however, remember that you offered.\n\n[Softer.]\n\nIt makes a difference.",
+        options: [{ text: '[Leave.]', go: null,
+          flag: 'ines_asset', flagLabel: '🤝 Ines: inside source' }],
       },
     },
   },

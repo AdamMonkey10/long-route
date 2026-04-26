@@ -349,7 +349,7 @@ export const SYSTEMS = {
         unlockReq: { type: 'flag', flag: 'flyte_met', label: 'Be vouched for by Flyte' } },
       { id: 'combine_embassy', name: 'Combine Embassy',
         desc: "Polished marble. Watch what you say. They're listening, and so is their intern.",
-        services: [], npcs: [],
+        services: [], npcs: ['ines'],
         unlockReq: { type: 'flag', flag: 'pellandra_met', label: 'Be flagged for a registration check' } },
     ],
   },

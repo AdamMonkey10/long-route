@@ -31,6 +31,7 @@ export function makeInitialState() {
     visitedSystems: ['portsmith'],
     markets,
     npcSeen: {},
+    npcVisits: {},
     dialogue: null,
     combat: null,
     combatLog: [],

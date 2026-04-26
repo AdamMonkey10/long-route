@@ -336,7 +336,7 @@ export function SettingsScreen({ state, dispatch, onNewGame, savedAt }) {
       </div>
 
       <div style={{ color: 'var(--text-ghost)', fontSize: 10, textAlign: 'center', marginTop: 14 }}>
-        v3.3 · Standings · {Object.keys(SYSTEMS).length} systems · Save format v3
+        v3.4 · Voice & memory · {Object.keys(SYSTEMS).length} systems · Save format v3
       </div>
     </div>
   )

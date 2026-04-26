@@ -1,6 +1,7 @@
 import { NPCS } from '../data/npcs.js'
 import { Portrait } from './Portrait.jsx'
 import { SFX } from '../game/sfx.js'
+import { isOptionVisible } from '../game/dialogue.js'
 
 export function DialogueScreen({ state, dispatch }) {
   const { npcId, nodeId } = state.dialogue || {}
@@ -60,38 +61,45 @@ export function DialogueScreen({ state, dispatch }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {node.options.map((opt, i) => {
-          if (opt.requireFlag && !state.flags[opt.requireFlag]) return null
+          if (!isOptionVisible(state, opt, npcId)) return null
           const cargoMissing =
             opt.requireCargo &&
             (() => {
               const c = state.cargo.find(x => x.id === opt.requireCargo)
               return !c || c.qty < opt.requireQty
             })()
+          // Options whose text is wrapped in [brackets] read as non-verbal
+          // actions or held silences; they're styled differently from spoken
+          // lines wrapped in "quotes".
+          const isAction = /^\[.+\]$/.test((opt.text || '').trim())
           return (
             <button
               key={i}
               onClick={() => {
                 if (cargoMissing) return
                 SFX.click()
-                dispatch({ type: 'CHOOSE_OPTION', option: opt })
+                dispatch({ type: 'CHOOSE_OPTION', option: opt, npc })
               }}
               disabled={cargoMissing}
               style={{
                 padding: '12px 16px',
                 background: cargoMissing ? 'var(--bg-panel-lo)' : 'var(--bg-panel-hi)',
                 border: `1px solid ${
-                  cargoMissing ? '#1a2030' : opt.flag ? '#2a4a2a' : 'var(--border)'
+                  cargoMissing ? '#1a2030' : opt.flag ? '#2a4a2a' : isAction ? '#1a2a3a' : 'var(--border)'
                 }`,
                 color: cargoMissing
                   ? 'var(--text-ghost)'
                   : opt.flag
                     ? '#70a070'
-                    : 'var(--text-mid)',
+                    : isAction
+                      ? '#5a7a90'
+                      : 'var(--text-mid)',
                 borderRadius: 6,
                 cursor: cargoMissing ? 'default' : 'pointer',
                 fontSize: 12,
                 textAlign: 'left',
                 lineHeight: 1.4,
+                fontStyle: isAction ? 'italic' : 'normal',
               }}
             >
               <span
@@ -100,10 +108,12 @@ export function DialogueScreen({ state, dispatch }) {
                     ? '#303040'
                     : opt.flag
                       ? '#4a8a4a'
-                      : '#2a5a8a',
+                      : isAction
+                        ? '#3a5a70'
+                        : '#2a5a8a',
                 }}
               >
-                ▶{' '}
+                {isAction ? '· ' : '▶ '}
               </span>
               {opt.text}
               {opt.flagLabel && (

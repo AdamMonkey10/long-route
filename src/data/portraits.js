@@ -30,4 +30,5 @@ export const PORTRAIT_DATA = {
   yolanda: { bg: '#14202a', face: '#b08070', hair: '#604030', eye: '#7090b0', exp: 'tired' },
   the_kid: { bg: '#0a1818', face: '#8a6a50', hair: '#403020', eye: '#80c0a0', exp: 'wide' },
   rennick: { bg: '#0a0a0a', face: '#807060', hair: '#a0a0a0', eye: '#5070a0', exp: 'gaunt' },
+  ines: { bg: '#10182a', face: '#d0b090', hair: '#3a3030', eye: '#80a0c0', exp: 'sharp' },
 }

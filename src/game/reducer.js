@@ -19,6 +19,7 @@ import {
   EVENT_STANDING_DELTAS,
   COMBAT_KILL_DELTAS,
 } from './standings.js'
+import { pickEntryNode } from './dialogue.js'
 
 const LOG_LIMIT = 60
 const TRADES_LIMIT = 100
@@ -343,24 +344,29 @@ export function reducer(state, action) {
     }
 
     case 'START_DIALOGUE': {
-      // Pick a starting node from the NPC's `entry` table, falling back to
-      // 'root'. Each entry can require/forbid flags for multi-visit NPCs.
+      // Increment visit count BEFORE entry matching so `requireMinVisits: N`
+      // means "this is at least your Nth visit including the current one".
       const npc = action.npc
-      let startNode = 'root'
-      if (npc?.entry) {
-        for (const e of npc.entry) {
-          if (e.requireFlag && !state.flags[e.requireFlag]) continue
-          if (e.requireNotFlag && state.flags[e.requireNotFlag]) continue
-          startNode = e.node
-          break
+      const npcId = action.npcId
+      const visits = (state.npcVisits?.[npcId] || 0) + 1
+      const staged = {
+        ...state,
+        npcVisits: { ...state.npcVisits, [npcId]: visits },
+      }
+      const startNode = pickEntryNode(staged, npc, npcId)
+      const root = npc?.tree?.[startNode]
+      let ns = {
+        ...staged,
+        view: 'dialogue',
+        dialogue: { npcId, nodeId: startNode },
+        npcSeen: { ...state.npcSeen, [npcId]: true },
+      }
+      if (root?.flagsOnEnter) {
+        for (const f of root.flagsOnEnter) {
+          ns.flags = { ...ns.flags, [f]: true }
         }
       }
-      return {
-        ...state,
-        view: 'dialogue',
-        dialogue: { npcId: action.npcId, nodeId: startNode },
-        npcSeen: { ...state.npcSeen, [action.npcId]: true },
-      }
+      return ns
     }
 
     case 'CHOOSE_OPTION': {
@@ -401,6 +407,27 @@ export function reducer(state, action) {
           ns.gameLog,
         )
       }
+
+      // Ines confrontation roll: telling her everything is genuinely 50/50.
+      if (opt.inesOutcome === 'random') {
+        if (Math.random() < 0.5) {
+          ns.flags = { ...ns.flags, ines_asset: true }
+          ns.gameLog = prepend('🤝 Ines decided to trust you. (Inside source.)', ns.gameLog)
+        } else {
+          ns.flags = { ...ns.flags, ines_reported: true }
+          ns = applyStanding(ns, { combine: -30 })
+          ns.gameLog = prepend('⚠ Ines reported the conversation. Combine standing fell hard.', ns.gameLog)
+        }
+      }
+
+      // Fire flagsOnEnter for the destination node, if the action passes the
+      // NPC tree along (DialogueScreen does so).
+      if (opt.go && action.npc?.tree?.[opt.go]?.flagsOnEnter) {
+        for (const f of action.npc.tree[opt.go].flagsOnEnter) {
+          ns.flags = { ...ns.flags, [f]: true }
+        }
+      }
+
       if (!opt.go) return { ...ns, view: 'station', dialogue: null }
       return { ...ns, dialogue: { npcId: ns.dialogue.npcId, nodeId: opt.go } }
     }
