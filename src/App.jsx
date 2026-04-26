@@ -25,6 +25,9 @@ export default function App() {
   const [savedAt, setSavedAt] = useState(() => loadGame()?.ts || null)
   const saveTimer = useRef(null)
   const skipFirstSave = useRef(true)
+  // Per-session ephemeral state — does NOT persist across reloads.
+  // Tracks which Guide entries have been auto-shown this session.
+  const sessionStateRef = useRef({ seenGuide: new Set() })
 
   // Debounced auto-save: skip while still on the name entry screen.
   useEffect(() => {
@@ -89,7 +92,11 @@ export default function App() {
           <div style={{ paddingBottom: 32, position: 'relative' }}>
             {state.view === 'map' && <GalaxyMap state={state} dispatch={wrappedDispatch} />}
             {state.view === 'station' && (
-              <StationView state={state} dispatch={wrappedDispatch} />
+              <StationView
+                state={state}
+                dispatch={wrappedDispatch}
+                sessionState={sessionStateRef.current}
+              />
             )}
             {state.view === 'dialogue' && (
               <DialogueScreen state={state} dispatch={wrappedDispatch} />

@@ -164,3 +164,47 @@ button:focus-visible {
   outline: 1px solid var(--accent);
   outline-offset: 2px;
 }
+
+/* Hitchhiker's Guide panel — phosphor-screen scanlines and slide-in. */
+@keyframes guideSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes guideOverlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.guide-overlay {
+  animation: guideOverlayIn 0.18s ease;
+}
+
+.guide-panel {
+  animation: guideSlideIn 0.28s ease;
+}
+
+.guide-scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(64, 255, 128, 0.04) 0,
+    rgba(64, 255, 128, 0.04) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: screen;
+  z-index: 0;
+}
+
+.guide-panel > * {
+  z-index: 1;
+}

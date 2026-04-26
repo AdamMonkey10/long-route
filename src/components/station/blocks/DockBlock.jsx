@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { cargoUsed } from '../../../game/utils.js'
 import { StatBlock } from '../../StatBlock.jsx'
 import { SFX } from '../../../game/sfx.js'
+import { ShipComputer } from '../../ShipComputer.jsx'
 
 export function DockBlock({ state, dispatch, sys, services }) {
   const [repairAmt, setRepairAmt] = useState(10)
@@ -13,6 +14,7 @@ export function DockBlock({ state, dispatch, sys, services }) {
 
   return (
     <>
+      {showRepair && <ShipComputer state={state} />}
       {showRepair && (
         <div
           style={{

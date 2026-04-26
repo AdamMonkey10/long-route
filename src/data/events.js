@@ -75,10 +75,18 @@ export const EVENTS = [
   },
   {
     id: 'spacewhale',
-    text: "Your sensors register something enormous. Not a ship — too organic. A creature the size of a small moon, moving through the void with improbable grace. Your nav computer has no classification. Your crew has no words.\n\nIt looks at you.\n\nYou look back.\n\nIt moves on.",
+    text: "Your sensors register something enormous. Not a ship — too organic. A creature the size of a small moon, moving through the void with improbable grace. Your nav computer has no classification. Your crew has no words.\n\nIt looks at you.\n\nYou look back.\n\nIt moves on. It does not look back.\n\nYou get the impression it has done this before, in other sectors, with other ships, and that none of them have ever quite known what to make of it either.\n\nThe feeling passes. You continue on your way.\n\nSomething has changed, slightly. You can't say what.",
     options: [
       { text: "Log the encounter", type: 'flag', flag: 'whale_seen', msg: "You log it. The entry reads: 'Something impossible. Very beautiful. Continued on course.' You add nothing else." },
       { text: "Follow it briefly", type: 'nothing', msg: "You follow for eleven minutes. Then it accelerates and is simply gone. You sit with that for a while." },
+    ],
+  },
+  {
+    id: 'forty_two',
+    text: "An old terminal beacon, drifting in the lane. The Combine lottery from 2087 — the ticket was never collected. Your nav computer flags it as 'recoverable miscellaneous credit balance.'\n\nThe screen blinks the unclaimed amount. It is not a large number. It is, however, an oddly specific one.",
+    options: [
+      { text: "Take the credits.", type: 'credits', value: 42, msg: "The amount seems oddly specific. You don't question it." },
+      { text: "Leave it for whoever's looking.", type: 'nothing', msg: "Some questions are best left unasked. You continue on your way." },
     ],
   },
   {

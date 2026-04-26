@@ -1,6 +1,10 @@
+import { useEffect, useState } from 'react'
 import { canVisitLocation, visibleLocations } from '../../game/utils.js'
 import { NpcList } from './blocks/NpcList.jsx'
 import { SFX } from '../../game/sfx.js'
+import { findGuideEntry } from '../../data/guide.js'
+import { GuidePanel, GuideButton } from '../GuidePanel.jsx'
+import { LocationIllustration } from '../illustrations/LocationIllustration.jsx'
 
 const SERVICE_GLYPH = {
   repair: '⛁',
@@ -106,12 +110,26 @@ function LocationCard({ state, dispatch, loc }) {
   )
 }
 
-export function ConcourseView({ state, dispatch, sys }) {
+export function ConcourseView({ state, dispatch, sys, sessionState }) {
   const concourse = sys.concourse || { name: sys.name, desc: sys.desc, npcs: [] }
   const locs = visibleLocations(state, sys)
+  const guideEntry = findGuideEntry(sys.id, null)
+  const [showGuide, setShowGuide] = useState(false)
+
+  useEffect(() => {
+    if (!guideEntry || !sessionState) return
+    if (!sessionState.seenGuide.has(guideEntry.id)) {
+      sessionState.seenGuide.add(guideEntry.id)
+      setShowGuide(true)
+    }
+  }, [guideEntry, sessionState])
 
   return (
     <div style={{ maxWidth: 520, margin: '0 auto', padding: '12px 16px' }} className="fade-in">
+      {showGuide && guideEntry && (
+        <GuidePanel entry={guideEntry} onDismiss={() => setShowGuide(false)} />
+      )}
+
       <div
         style={{
           color: 'var(--text-ghost)',
@@ -128,13 +146,26 @@ export function ConcourseView({ state, dispatch, sys }) {
       </div>
       <div
         style={{
-          color: 'var(--text-faint)',
-          fontSize: 11,
-          letterSpacing: 1,
-          marginBottom: 14,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 10,
         }}
       >
-        {concourse.name.toUpperCase()}
+        <div
+          style={{
+            color: 'var(--text-faint)',
+            fontSize: 11,
+            letterSpacing: 1,
+          }}
+        >
+          {concourse.name.toUpperCase()}
+        </div>
+        {guideEntry && <GuideButton onClick={() => setShowGuide(true)} />}
+      </div>
+
+      <div style={{ marginBottom: 14 }}>
+        <LocationIllustration systemId={sys.id} locationId={null} />
       </div>
 
       <div
