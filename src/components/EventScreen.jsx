@@ -56,7 +56,7 @@ export function EventScreen({ state, dispatch }) {
               onClick={() => {
                 if (disabled) return
                 SFX.click()
-                dispatch({ type: 'RESOLVE_EVENT', option: opt })
+                dispatch({ type: 'RESOLVE_EVENT', option: opt, optionIdx: i })
               }}
               disabled={disabled}
               style={{

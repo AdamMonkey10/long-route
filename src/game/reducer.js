@@ -12,6 +12,13 @@ import {
   playerRepairAmount,
   getEnemyAction,
 } from './utils.js'
+import {
+  applyStanding,
+  combatChanceMultiplier,
+  forcedEnemy,
+  EVENT_STANDING_DELTAS,
+  COMBAT_KILL_DELTAS,
+} from './standings.js'
 
 const LOG_LIMIT = 60
 const TRADES_LIMIT = 100
@@ -29,8 +36,23 @@ export function reducer(state, action) {
     case 'SET_NAME':
       return { ...state, playerName: action.name, view: 'map' }
 
-    case 'GO_LOCATION':
-      return { ...state, view: 'station', currentLocation: action.id }
+    case 'GO_LOCATION': {
+      let ns = { ...state, view: 'station', currentLocation: action.id }
+      const eff = action.effect
+      // visitEffect on the location is applied once per location id, tracked
+      // via flag — so re-entering doesn't keep stacking penalties.
+      if (eff && !state.flags?.[`visited_${state.currentSystem}_${action.id}`]) {
+        ns.flags = { ...ns.flags, [`visited_${state.currentSystem}_${action.id}`]: true }
+        if (eff.flag) {
+          ns.flags = { ...ns.flags, [eff.flag]: true }
+          ns.gameLog = prepend(`⚠ ${eff.flag.replace(/_/g, ' ')} flagged.`, ns.gameLog)
+        }
+        if (eff.combine || eff.frontier) {
+          ns = applyStanding(ns, { combine: eff.combine || 0, frontier: eff.frontier || 0 })
+        }
+      }
+      return ns
+    }
     case 'BACK_TO_CONCOURSE':
       return { ...state, view: 'station', currentLocation: null }
 
@@ -56,10 +78,21 @@ export function reducer(state, action) {
       if (state.credits < cost) {
         return { ...state, notification: `Not enough credits for fuel (need ${cost})` }
       }
+      const forced = forcedEnemy(state, sys)
+      const effectiveChance = sys.combatChance * combatChanceMultiplier(state, sys)
       const combatRoll = Math.random() * 100
       let event = null
       let combat = null
-      if (combatRoll < sys.combatChance) {
+
+      if (forced) {
+        const eType = ENEMIES.find(e => e.id === forced)
+        if (eType) {
+          const enemy = { ...eType, hull: eType.maxHull, patternIdx: 0 }
+          combat = { enemy, playerAP: 3, playerEvading: false, turn: 1, log: [eType.intro] }
+        }
+      }
+
+      if (!combat && combatRoll < effectiveChance) {
         const enemyTypes = ENEMIES.filter(e =>
           sys.faction === 'Combine' ? e.id === 'patrol' : e.id !== 'patrol',
         )
@@ -72,7 +105,7 @@ export function reducer(state, action) {
           turn: 1,
           log: [eType.intro],
         }
-      } else {
+      } else if (!combat) {
         event = EVENTS[rng(0, EVENTS.length - 1)]
       }
       const newMarkets = { ...state.markets, [action.to]: generateMarket(action.to) }
@@ -104,6 +137,11 @@ export function reducer(state, action) {
       const addLog = msg => {
         ns.gameLog = prepend(msg, ns.gameLog)
       }
+
+      // Apply faction standing deltas keyed off "<eventId>.<optionIdx>"
+      const deltaKey = `${state.event?.id}.${action.optionIdx}`
+      const delta = EVENT_STANDING_DELTAS[deltaKey]
+      if (delta) ns = applyStanding(ns, delta)
 
       if (opt.type === 'hull') {
         ns.hull = Math.max(1, state.hull + opt.value)
@@ -347,6 +385,15 @@ export function reducer(state, action) {
         ns.flags = { ...ns.flags, [opt.flag]: true }
         ns.gameLog = prepend(opt.flagLabel || `Discovery: ${opt.flag}`, ns.gameLog)
       }
+      if (opt.combineDelta || opt.frontierDelta) {
+        ns = applyStanding(ns, {
+          combine: opt.combineDelta || 0,
+          frontier: opt.frontierDelta || 0,
+        })
+      }
+      if (opt.inesTrustDelta) {
+        ns = { ...ns, inesTrust: (ns.inesTrust || 0) + opt.inesTrustDelta }
+      }
       if (opt.giveItem === 'data_core') {
         ns.flags = { ...ns.flags, has_data_core: true }
         ns.gameLog = prepend(
@@ -447,7 +494,7 @@ export function reducer(state, action) {
             : `${newCombat.enemy.name} stands down. No salvage.`,
           state.gameLog,
         )
-        return {
+        let after = {
           ...state,
           combat: null,
           combatLog: [],
@@ -457,6 +504,9 @@ export function reducer(state, action) {
           currentLocation: null,
           gameLog: log,
         }
+        const killDelta = COMBAT_KILL_DELTAS[newCombat.enemy.id]
+        if (killDelta) after = applyStanding(after, killDelta)
+        return after
       }
 
       // Defeat

@@ -1,5 +1,5 @@
 export const SAVE_KEY = 'lr_save_v1'
-export const SAVE_VERSION = 2
+export const SAVE_VERSION = 3
 
 // Migrate older saves into the current shape. Returns the migrated state, or
 // null if the save is too old / unrecognised to recover.
@@ -8,15 +8,28 @@ function migrate(parsed) {
 
   if (parsed.v === SAVE_VERSION) return parsed.state
 
-  if (parsed.v === 1) {
-    const next = { ...parsed.state }
+  let next = parsed.state
+  let v = parsed.v
+
+  if (v === 1) {
     // v1 → v2: locations replaced station tabs.
+    next = { ...next }
     delete next.stationTab
     if (next.currentLocation === undefined) next.currentLocation = null
-    return next
+    v = 2
   }
 
-  return null
+  if (v === 2) {
+    // v2 → v3: faction standing + Ines hidden trust.
+    next = { ...next }
+    if (next.combineStanding === undefined) next.combineStanding = 0
+    if (next.frontierSympathy === undefined) next.frontierSympathy = 0
+    if (next.inesTrust === undefined) next.inesTrust = 0
+    v = 3
+  }
+
+  if (v !== SAVE_VERSION) return null
+  return next
 }
 
 export function saveGame(state) {

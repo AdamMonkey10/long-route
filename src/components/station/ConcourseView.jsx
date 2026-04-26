@@ -31,7 +31,7 @@ function LocationCard({ state, dispatch, loc }) {
       return
     }
     SFX.click()
-    dispatch({ type: 'GO_LOCATION', id: loc.id })
+    dispatch({ type: 'GO_LOCATION', id: loc.id, effect: loc.visitEffect || null })
   }
 
   return (

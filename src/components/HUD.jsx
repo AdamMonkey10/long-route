@@ -21,10 +21,23 @@ export function HUD({ state, dispatch }) {
 
   const showNav = state.view !== 'combat' && state.view !== 'event' && state.view !== 'nameEntry'
   const sysName = SYSTEMS[state.currentSystem]?.name || '—'
+  const cs = state.combineStanding || 0
+  const fs = state.frontierSympathy || 0
 
   const click = (action) => {
     SFX.click()
     dispatch(action)
+  }
+
+  const standingChip = (label, n, lo, hi) => {
+    if (n === 0) return null
+    const sign = n > 0 ? '+' : ''
+    const color = n > hi ? 'var(--good)' : n < lo ? 'var(--bad)' : 'var(--text-faint)'
+    return (
+      <span title={label} style={{ color, fontSize: 10, letterSpacing: 1 }}>
+        {label}{' '}{sign}{n}
+      </span>
+    )
   }
 
   return (
@@ -63,6 +76,14 @@ export function HUD({ state, dispatch }) {
       </span>
       <span style={{ color: '#7090a0' }}>│</span>
       <span style={{ color: 'var(--accent)' }}>{sysName}</span>
+      {(cs !== 0 || fs !== 0) && (
+        <span style={{ color: '#7090a0' }}>│</span>
+      )}
+      {standingChip('CMB', cs, -20, 10)}
+      {fs !== 0 && cs !== 0 && (
+        <span style={{ color: '#1a3040', fontSize: 10 }}>·</span>
+      )}
+      {standingChip('FRN', fs, -1, 30)}
 
       {showNav && (
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>

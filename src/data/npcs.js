@@ -311,7 +311,7 @@ export const NPCS = {
       },
       edda: {
         text: "Then you're asking the right questions. She was going after the source records at Kessel. Whether she got there — I don't know. She was careful.\n\nI'll tell you what I told her: the Consortium was the logistics arm. Secondary records, if they exist, are in Consortium archives. Talk to a woman called Mirela Voss. Tell her Agatha says 7741-C.",
-        options: [{ text: "7741-C. Thank you.", go: null, flag: 'consortium_archive_known', flagLabel: '📁 Archive route: ask for Mirela Voss' }],
+        options: [{ text: "7741-C. Thank you.", go: null, flag: 'agatha_met', flagLabel: '📁 Archive route: ask for Mirela Voss' }],
       },
       told: {
         text: "That the weapons requisitions were authorised through a Consortium subsidiary. Filed under a supply contract number nobody was likely to look up.\n\nWhich is how bureaucracy works. Things aren't hidden. They're just misfiled.",
