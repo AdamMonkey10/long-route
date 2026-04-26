@@ -1,5 +1,7 @@
+import { makeInitialArc7 } from './arc7.js'
+
 export const SAVE_KEY = 'lr_save_v1'
-export const SAVE_VERSION = 3
+export const SAVE_VERSION = 4
 
 // Migrate older saves into the current shape. Returns the migrated state, or
 // null if the save is too old / unrecognised to recover.
@@ -26,6 +28,13 @@ function migrate(parsed) {
     if (next.frontierSympathy === undefined) next.frontierSympathy = 0
     if (next.inesTrust === undefined) next.inesTrust = 0
     v = 3
+  }
+
+  if (v === 3) {
+    // v3 → v4: ARC-7 companion sub-state.
+    next = { ...next }
+    if (!next.arc7) next.arc7 = makeInitialArc7()
+    v = 4
   }
 
   if (v !== SAVE_VERSION) return null

@@ -1,5 +1,6 @@
 import { SYSTEMS } from '../data/systems.js'
 import { generateMarket } from './utils.js'
+import { makeInitialArc7 } from './arc7.js'
 
 export function makeInitialState() {
   const markets = {}
@@ -43,5 +44,6 @@ export function makeInitialState() {
       "You have inherited a ship with a name you didn't choose and a history you don't know. The Persistent Delusion. It'll do.",
     ],
     notification: null,
+    arc7: makeInitialArc7(),
   }
 }

@@ -14,6 +14,7 @@ import { LogScreen } from './components/LogScreen.jsx'
 import { LedgerScreen } from './components/LedgerScreen.jsx'
 import { SettingsScreen } from './components/SettingsScreen.jsx'
 import { ShipLogScreen } from './components/ShipLogScreen.jsx'
+import { Arc7Panel } from './components/Arc7Panel.jsx'
 import { Notification } from './components/Notification.jsx'
 
 function init() {
@@ -90,7 +91,11 @@ export default function App() {
       ) : (
         <>
           <HUD state={state} dispatch={wrappedDispatch} />
-          <div style={{ paddingBottom: 32, position: 'relative' }}>
+          {/* Padding-bottom leaves room for the persistent ARC-7 panel.
+              Collapsed it's ~28px, expanded up to ~40vh — content can scroll
+              under either; the explicit padding keeps the natural bottom in
+              view. */}
+          <div style={{ paddingBottom: state.arc7?.collapsed ? 50 : 220, position: 'relative' }}>
             {state.view === 'map' && <GalaxyMap state={state} dispatch={wrappedDispatch} />}
             {state.view === 'station' && (
               <StationView
@@ -124,6 +129,7 @@ export default function App() {
               <ShipLogScreen state={state} dispatch={wrappedDispatch} />
             )}
           </div>
+          <Arc7Panel state={state} dispatch={wrappedDispatch} />
         </>
       )}
     </div>

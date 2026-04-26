@@ -20,6 +20,19 @@ import {
   COMBAT_KILL_DELTAS,
 } from './standings.js'
 import { pickEntryNode } from './dialogue.js'
+import {
+  applyArc7Reactions,
+  arc7Boot,
+  arc7Jump,
+  arc7CombatStart,
+  arc7CombatVictory,
+  arc7ShipCritical,
+  arc7HullCritical,
+  arc7FirstBuy,
+  arc7FirstSellProfit,
+  arc7FirstSellLoss,
+  arc7Upgrade,
+} from './arc7.js'
 
 const LOG_LIMIT = 60
 const TRADES_LIMIT = 100
@@ -27,6 +40,11 @@ const TRADES_LIMIT = 100
 const prepend = (msg, log) => [msg, ...log].slice(0, LOG_LIMIT)
 
 export function reducer(state, action) {
+  const next = baseReducer(state, action)
+  return applyArc7Reactions(state, next)
+}
+
+function baseReducer(state, action) {
   switch (action.type) {
     case 'LOAD_STATE':
       return action.state
@@ -35,7 +53,7 @@ export function reducer(state, action) {
       return action.state
 
     case 'SET_NAME':
-      return { ...state, playerName: action.name, view: 'map' }
+      return arc7Boot({ ...state, playerName: action.name, view: 'map' })
 
     case 'GO_LOCATION': {
       let ns = { ...state, view: 'station', currentLocation: action.id }
@@ -61,6 +79,20 @@ export function reducer(state, action) {
       return { ...state, notification: action.msg }
     case 'CLEAR_NOTIFY':
       return { ...state, notification: null }
+
+    case 'ARC7_TOGGLE_COLLAPSE': {
+      const arc7 = state.arc7 || {}
+      const collapsing = !arc7.collapsed
+      return {
+        ...state,
+        arc7: {
+          ...arc7,
+          collapsed: collapsing,
+          // Expanding clears the "new" indicator; collapsing keeps it as is.
+          hasNew: collapsing ? arc7.hasNew : false,
+        },
+      }
+    }
 
     case 'GOTO_MAP':
       return { ...state, view: 'map', dialogue: null }
@@ -135,7 +167,8 @@ export function reducer(state, action) {
         `Jumped to ${sys.name}. Fuel cost: ${cost} credits.`,
         state.gameLog,
       )
-      return {
+      const wasVisited = state.visitedSystems.includes(action.to)
+      const arrived = {
         ...state,
         credits: state.credits - cost,
         currentSystem: action.to,
@@ -148,6 +181,12 @@ export function reducer(state, action) {
         combatLog: combat ? [combat.log[0]] : [],
         gameLog: log,
       }
+      // ARC-7: pick a destination/random message first; if combat triggered,
+      // the combat-start message overrides — and resets the per-combat hull
+      // critical tracker.
+      let next = arc7Jump(arrived, action.to, wasVisited, state.currentSystem)
+      if (combat) next = arc7CombatStart(next)
+      return next
     }
 
     case 'RESOLVE_EVENT': {
@@ -262,7 +301,7 @@ export function reducer(state, action) {
         total: cost,
         system: SYSTEMS[state.currentSystem].name,
       }
-      return {
+      const after = {
         ...state,
         credits: state.credits - cost,
         cargo: newCargo,
@@ -270,6 +309,7 @@ export function reducer(state, action) {
         gameLog: log,
         trades: [trade, ...(state.trades || [])].slice(0, TRADES_LIMIT),
       }
+      return arc7FirstBuy(after)
     }
 
     case 'SELL': {
@@ -307,7 +347,7 @@ export function reducer(state, action) {
       }
       const nTP = (state.totalProfit || 0) + (profit > 0 ? profit : 0)
       const nTL = (state.totalLoss || 0) + (profit < 0 ? -profit : 0)
-      return {
+      const after = {
         ...state,
         credits: state.credits + revenue,
         cargo: newCargo,
@@ -318,6 +358,9 @@ export function reducer(state, action) {
         totalProfit: nTP,
         totalLoss: nTL,
       }
+      if (profit > 0) return arc7FirstSellProfit(after, profit)
+      if (profit < 0) return arc7FirstSellLoss(after, -profit)
+      return after
     }
 
     case 'REPAIR': {
@@ -383,7 +426,7 @@ export function reducer(state, action) {
       // 'scanner' has no state effect; the upgrades list itself is the gate.
 
       const log = prepend(`Installed: ${upg.name}.`, state.gameLog)
-      return { ...ns, gameLog: log }
+      return arc7Upgrade({ ...ns, gameLog: log }, upg.name)
     }
 
     case 'START_DIALOGUE': {
@@ -586,7 +629,7 @@ export function reducer(state, action) {
         }
         const killDelta = COMBAT_KILL_DELTAS[newCombat.enemy.id]
         if (killDelta) after = applyStanding(after, killDelta)
-        return after
+        return arc7CombatVictory(after, workingHull)
       }
 
       // Defeat
@@ -595,7 +638,7 @@ export function reducer(state, action) {
           `The ${newCombat.enemy.name} overwhelms you. Emergency landing. Hull critical. You lose your cargo.`,
           state.gameLog,
         )
-        return {
+        const after = {
           ...state,
           combat: null,
           combatLog: [],
@@ -606,14 +649,22 @@ export function reducer(state, action) {
           gameLog: log,
           notification: 'SHIP CRITICAL — All cargo lost. Pay for repairs immediately.',
         }
+        return arc7ShipCritical(after)
       }
 
-      return {
+      // Mid-combat: hull dipped below 30% for the first time this combat.
+      const hullPctBefore = state.hull / state.maxHull
+      const hullPctAfter = workingHull / state.maxHull
+      let after = {
         ...state,
         hull: workingHull,
         combat: newCombat,
         combatLog: newCombatLog.slice(0, 8),
       }
+      if (hullPctBefore >= 0.3 && hullPctAfter < 0.3) {
+        after = arc7HullCritical(after)
+      }
+      return after
     }
 
     default:
