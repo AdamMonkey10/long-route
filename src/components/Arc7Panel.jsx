@@ -45,13 +45,13 @@ export function Arc7Panel({ state, dispatch }) {
           left: 0,
           right: 0,
           bottom: 0,
-          background: '#050d14',
-          borderTop: '1px solid #0a1a18',
-          borderLeft: '2px solid #2a5a4a',
-          color: '#2a6a5a',
+          background: 'var(--arc-teal-bg)',
+          borderTop: '1px solid var(--arc-teal-deep)',
+          borderLeft: '2px solid var(--arc-teal-deep)',
+          color: 'var(--arc-teal)',
           padding: '6px 14px',
-          fontFamily: "'Space Mono', ui-monospace, monospace",
-          fontSize: 10,
+          fontFamily: 'var(--font-mono)',
+          fontSize: 11,
           letterSpacing: 3,
           textAlign: 'left',
           cursor: 'pointer',
@@ -61,8 +61,8 @@ export function Arc7Panel({ state, dispatch }) {
           alignItems: 'center',
         }}
       >
-        <span>
-          ARC-7
+        <span style={{ fontWeight: 700 }}>
+          ▾ ARC-7
           {arc7.hasNew && (
             <span
               className="arc7-pulse-dot"
@@ -72,14 +72,14 @@ export function Arc7Panel({ state, dispatch }) {
                 width: 7,
                 height: 7,
                 borderRadius: '50%',
-                background: '#40c080',
+                background: 'var(--arc-teal)',
                 marginLeft: 8,
                 verticalAlign: 'baseline',
               }}
             />
           )}
         </span>
-        <span style={{ color: '#1a3a2a' }}>▴</span>
+        <span style={{ color: '#2a8a78' }}>▴</span>
       </button>
     )
   }
@@ -92,33 +92,40 @@ export function Arc7Panel({ state, dispatch }) {
         left: 0,
         right: 0,
         bottom: 0,
-        background: '#050d14',
-        borderTop: '1px solid #0a1a18',
-        borderLeft: '2px solid #2a5a4a',
-        padding: '10px 14px 12px',
-        fontFamily: "'Space Mono', ui-monospace, monospace",
+        background: 'var(--arc-teal-bg)',
+        borderTop: '1px solid var(--arc-teal-deep)',
+        borderLeft: '2px solid var(--arc-teal-deep)',
+        padding: '12px 16px 14px',
+        fontFamily: 'var(--font-mono)',
         zIndex: 50,
-        boxShadow: '0 -6px 18px rgba(0,0,0,0.4)',
+        boxShadow:
+          '0 -6px 18px rgba(0,0,0,0.4), inset 0 0 40px rgba(95, 216, 192, 0.06)',
         maxHeight: '40vh',
         overflowY: 'auto',
       }}
     >
+      <div className="arc7-scanlines" aria-hidden />
+
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: 6,
+          paddingBottom: 8,
+          marginBottom: 12,
+          borderBottom: '1px dashed var(--arc-teal-deep)',
+          position: 'relative',
         }}
       >
         <span
           style={{
-            color: '#2a6a5a',
-            fontSize: 10,
+            color: 'var(--arc-teal)',
+            fontSize: 11,
             letterSpacing: 3,
+            fontWeight: 700,
           }}
         >
-          ARC-7
+          ▾ ARC-7 / NAV
         </span>
         <button
           onClick={() => dispatch({ type: 'ARC7_TOGGLE_COLLAPSE' })}
@@ -126,7 +133,7 @@ export function Arc7Panel({ state, dispatch }) {
           style={{
             background: 'transparent',
             border: 'none',
-            color: '#2a6a5a',
+            color: 'var(--arc-teal)',
             cursor: 'pointer',
             fontSize: 14,
             padding: 0,
@@ -136,26 +143,30 @@ export function Arc7Panel({ state, dispatch }) {
           ▾
         </button>
       </div>
+
       <div
         className={fading ? '' : 'arc7-message-in'}
         style={{
-          color: '#80c0a0',
+          color: 'var(--arc-teal)',
           fontSize: 13,
           lineHeight: 1.7,
           fontStyle: 'italic',
+          letterSpacing: 0.3,
           whiteSpace: 'pre-line',
           opacity: fading ? 0 : 1,
           transition: 'opacity 0.2s ease',
+          position: 'relative',
         }}
       >
         {visibleMsg}
       </div>
       <div
         style={{
-          color: '#1a3a2a',
-          fontSize: 9,
+          color: '#2a8a78',
+          fontSize: 10,
           letterSpacing: 2,
-          marginTop: 8,
+          marginTop: 10,
+          position: 'relative',
         }}
       >
         {stamp}

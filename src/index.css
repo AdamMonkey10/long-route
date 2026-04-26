@@ -1,23 +1,79 @@
 :root {
-  --bg-deep: #010a14;
-  --bg-panel: #030a12;
-  --bg-panel-hi: #060f1a;
-  --bg-panel-lo: #050d18;
-  --border-dim: #0d1e2a;
-  --border: #1a3040;
-  --border-hi: #1a3a5a;
-  --border-accent: #2a5a8a;
-  --text: #a0c0d0;
-  --text-bright: #c0e0f0;
-  --text-mid: #8090a0;
-  --text-dim: #607080;
-  --text-faint: #4a6a80;
-  --text-ghost: #304050;
-  --accent: #4aafe0;
-  --accent-2: #80d0ff;
-  --good: #4ade80;
-  --warn: #facc15;
-  --bad: #f87171;
+  /* Long Route — Visual Style Guide tokens (TLR-001).
+     Existing aliases below remain so legacy components keep working. */
+
+  /* Space — base hull of the UI */
+  --space-void: #010a14;
+  --space-deep: #030a12;
+  --space-near: #060f18;
+  --space-rim:  #0a1520;
+
+  /* Borders — always 1px, always muted */
+  --rule-faint:  #1a2a3a;
+  --rule-base:   #1a3040;
+  --rule-active: #2a5a8a;
+
+  /* Ink — cool greys with one bright accent */
+  --ink-bright:  #c0e0f0;
+  --ink-default: #a0c0d0;
+  --ink-muted:   #708090;
+  --ink-dim:     #4a6a80;
+  --ink-faint:   #304050;
+
+  /* Signal accents — discipline: ONE per surface */
+  --hud-blue:      #4aafe0;
+  --hud-blue-deep: #0a2a4a;
+  --hud-blue-rim:  #2a6a9a;
+  --signal-green:  #4ade80;
+  --signal-amber:  #d0a050;
+  --signal-red:    #d05050;
+  --signal-violet: #9050d0;
+
+  /* In-universe surfaces (these break the cool-grey rule, on purpose) */
+  --arc-teal:      #5fd8c0;
+  --arc-teal-deep: #042820;
+  --arc-teal-bg:   #021612;
+
+  --phosphor:      #7fff8a;
+  --phosphor-dim:  #2a8c3a;
+  --phosphor-bg:   #001508;
+  --phosphor-glow: rgba(127, 255, 138, 0.35);
+
+  /* System tier colours (chart nodes) */
+  --tier-1: #2a5a90;
+  --tier-2: #4a8040;
+  --tier-3: #904040;
+  --tier-4: #806020;
+
+  /* Type */
+  --font-mono:     'Space Mono', ui-monospace, monospace;
+  --font-phosphor: 'VT323', 'Space Mono', monospace;
+
+  /* Geometry */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* ── Legacy aliases (existing code references these) ─────────────── */
+  --bg-deep:        var(--space-void);
+  --bg-panel:       var(--space-deep);
+  --bg-panel-hi:    #060f1a;
+  --bg-panel-lo:    #050d18;
+  --border-dim:     #0d1e2a;
+  --border:         var(--rule-base);
+  --border-hi:      #1a3a5a;
+  --border-accent:  var(--rule-active);
+  --text:           var(--ink-default);
+  --text-bright:    var(--ink-bright);
+  --text-mid:       #8090a0;
+  --text-dim:       #607080;
+  --text-faint:     var(--ink-dim);
+  --text-ghost:     var(--ink-faint);
+  --accent:         var(--hud-blue);
+  --accent-2:       #80d0ff;
+  --good:           var(--signal-green);
+  --warn:           #facc15;
+  --bad:            #f87171;
 }
 
 * {
@@ -190,23 +246,42 @@ button:focus-visible {
   animation: guideSlideIn 0.28s ease;
 }
 
+/* CRT scanlines on the Compendium phosphor screen. */
 .guide-scanlines {
   position: absolute;
   inset: 0;
   pointer-events: none;
   background: repeating-linear-gradient(
     to bottom,
-    rgba(64, 255, 128, 0.04) 0,
-    rgba(64, 255, 128, 0.04) 1px,
-    transparent 1px,
-    transparent 3px
+    rgba(0, 0, 0, 0) 0px,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 30, 10, 0.35) 3px,
+    rgba(0, 30, 10, 0.35) 3px
   );
-  mix-blend-mode: screen;
+  mix-blend-mode: multiply;
   z-index: 0;
 }
 
-.guide-panel > * {
+/* CRT vignette + curvature suggestion. */
+.guide-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.45) 100%);
+  z-index: 0;
+}
+
+.guide-panel > *:not(.guide-scanlines):not(.guide-vignette) {
+  position: relative;
   z-index: 1;
+}
+
+@keyframes compendiumCursorBlink {
+  50% { opacity: 0; }
+}
+.guide-cursor {
+  display: inline-block;
+  animation: compendiumCursorBlink 1.1s steps(2) infinite;
 }
 
 /* ARC-7 panel — pulse for the "new message" indicator + slow fade-in for
@@ -233,4 +308,20 @@ button:focus-visible {
 
 .arc7-message-in {
   animation: arc7MessageIn 0.4s ease;
+}
+
+/* Subtle scanlines — softer than the Compendium, the chip is closer to a
+   working terminal than a dedicated reading device. */
+.arc7-scanlines {
+  position: absolute;
+  inset: 1px;
+  pointer-events: none;
+  border-radius: 7px;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0,
+    rgba(0, 0, 0, 0) 3px,
+    rgba(0, 30, 24, 0.4) 4px,
+    rgba(0, 30, 24, 0.4) 4px
+  );
 }

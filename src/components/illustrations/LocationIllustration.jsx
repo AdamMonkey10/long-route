@@ -5,6 +5,7 @@
 // generic stationscape.
 
 const VB = '0 0 480 200'
+const VB_PLATE = '0 0 1600 500'
 const baseStyle = {
   display: 'block',
   width: '100%',
@@ -15,89 +16,309 @@ const baseStyle = {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Detailed scenes
+// Style Guide §07 — Station Plates
+//   16:5 viewBox 1600 × 500
+//   preserveAspectRatio="xMidYMid slice"
+//   survey frame: corner ticks + plate code + scale text
 // ─────────────────────────────────────────────────────────────
 
 function PortsmithConcourse() {
   return (
-    <svg viewBox={VB} style={baseStyle} preserveAspectRatio="xMidYMid slice">
+    <svg viewBox={VB_PLATE} style={baseStyle} preserveAspectRatio="xMidYMid slice"
+         xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="floor-grey" x1="0" y1="1" x2="0" y2="0">
-          <stop offset="0%" stopColor="#1a2028" />
-          <stop offset="100%" stopColor="#3a4654" />
+        <linearGradient id="ps-bg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#0a1018" />
+          <stop offset="1" stopColor="#02060a" />
+        </linearGradient>
+        <linearGradient id="ps-floor" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#161c24" />
+          <stop offset="1" stopColor="#080c12" />
+        </linearGradient>
+        <linearGradient id="ps-ceil" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#0a0f16" />
+          <stop offset="1" stopColor="#1a2230" />
+        </linearGradient>
+        <linearGradient id="ps-panel" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#1a2230" />
+          <stop offset="1" stopColor="#0a1018" />
         </linearGradient>
       </defs>
-      <rect width="480" height="200" fill="#0a0e14" />
-      {/* Window with stars (nobody is looking) */}
-      <rect x="14" y="16" width="76" height="42" fill="#020408" stroke="#1a2030" />
-      {[14, 26, 42, 58, 70, 82].map((x, i) => (
-        <circle key={i} cx={x + 4} cy={20 + ((i * 7) % 30)} r={i % 2 ? 1.2 : 0.7} fill="#a0c0d0" opacity={0.5} />
-      ))}
-      {/* Receding floor */}
-      <polygon points="0,140 480,140 320,200 160,200" fill="url(#floor-grey)" />
-      <polygon points="0,140 0,200 160,200" fill="#0a1018" />
-      <polygon points="480,140 480,200 320,200" fill="#0a1018" />
-      {/* Strip lights overhead receding to vanishing point */}
-      {[0, 1, 2, 3, 4].map(i => {
-        const t = (i + 1) / 6
-        const x1 = 80 + (240 - 80) * t
-        const x2 = 400 - (400 - 240) * t
-        const y = 30 + 60 * t
-        return <rect key={i} x={x1} y={y} width={x2 - x1} height={2} fill="#e8ecf0" opacity={0.6} />
-      })}
-      {/* Vanishing-point glow */}
-      <circle cx="240" cy="138" r="18" fill="#4a6a90" opacity="0.25" />
-      <circle cx="240" cy="138" r="6" fill="#8a9ba8" opacity="0.7" />
-      {/* Walking silhouettes (mid-distance) */}
-      {[
-        { x: 180, h: 22, w: 6 },
-        { x: 200, h: 20, w: 5 },
-        { x: 280, h: 22, w: 6 },
-        { x: 300, h: 21, w: 5 },
-      ].map((f, i) => (
-        <g key={i}>
-          <ellipse cx={f.x + f.w / 2} cy={130 - f.h - 2} rx={f.w * 0.5} ry={f.w * 0.45} fill="#4a5a68" />
-          <rect x={f.x} y={130 - f.h} width={f.w} height={f.h} fill="#4a5a68" />
+
+      <rect width="1600" height="500" fill="url(#ps-bg)" />
+
+      <g opacity="0.6">
+        <circle cx="120" cy="60" r="0.8" fill="#a0c0d0" />
+        <circle cx="220" cy="40" r="1.2" fill="#a0c0d0" />
+        <circle cx="340" cy="80" r="0.7" fill="#a0c0d0" />
+        <circle cx="1280" cy="55" r="1" fill="#a0c0d0" />
+        <circle cx="1400" cy="35" r="0.7" fill="#a0c0d0" />
+        <circle cx="1500" cy="75" r="1.1" fill="#a0c0d0" />
+      </g>
+
+      {/* Vanishing point */}
+      <rect x="740" y="220" width="120" height="60" fill="#020608" stroke="#1a2a3a" strokeWidth="1" />
+      <g fill="#3a4a5a">
+        <rect x="794" y="248" width="4" height="14" />
+        <circle cx="796" cy="246" r="2" />
+        <rect x="803" y="252" width="3" height="10" />
+        <circle cx="804.5" cy="250" r="1.5" />
+      </g>
+
+      {/* Ceiling plates */}
+      <polygon points="0,0 1600,0 1600,140 860,220 740,220 0,140" fill="url(#ps-ceil)" />
+      <g stroke="#2a3a4a" strokeWidth="0.8" fill="none" opacity="0.7">
+        <line x1="0" y1="40" x2="1600" y2="40" />
+        <line x1="0" y1="80" x2="1600" y2="80" />
+        <line x1="0" y1="120" x2="1600" y2="120" />
+        <line x1="0" y1="0" x2="740" y2="220" />
+        <line x1="200" y1="0" x2="755" y2="220" />
+        <line x1="500" y1="0" x2="775" y2="220" />
+        <line x1="800" y1="0" x2="800" y2="220" />
+        <line x1="1100" y1="0" x2="825" y2="220" />
+        <line x1="1400" y1="0" x2="845" y2="220" />
+        <line x1="1600" y1="0" x2="860" y2="220" />
+      </g>
+      <g fill="#d0a050" opacity="0.5">
+        <rect x="380" y="98" width="60" height="3" />
+        <rect x="700" y="108" width="40" height="3" />
+        <rect x="860" y="108" width="40" height="3" />
+        <rect x="1160" y="98" width="60" height="3" />
+      </g>
+
+      {/* Floor */}
+      <polygon points="0,500 1600,500 1600,360 860,280 740,280 0,360" fill="url(#ps-floor)" />
+      <g stroke="#1a2230" strokeWidth="0.7" fill="none">
+        <line x1="0" y1="500" x2="740" y2="280" />
+        <line x1="200" y1="500" x2="755" y2="280" />
+        <line x1="500" y1="500" x2="775" y2="280" />
+        <line x1="800" y1="500" x2="800" y2="280" />
+        <line x1="1100" y1="500" x2="825" y2="280" />
+        <line x1="1400" y1="500" x2="845" y2="280" />
+        <line x1="1600" y1="500" x2="860" y2="280" />
+        <line x1="0" y1="380" x2="1600" y2="380" />
+        <line x1="0" y1="430" x2="1600" y2="430" />
+        <line x1="0" y1="475" x2="1600" y2="475" />
+      </g>
+
+      {/* Left wall — bay doors */}
+      <g>
+        <polygon points="0,140 0,360 80,360 80,170" fill="url(#ps-panel)" stroke="#2a3a4a" strokeWidth="1" />
+        <rect x="14" y="190" width="50" height="150" fill="#020608" stroke="#1a3040" />
+        <text x="40" y="180" textAnchor="middle" fontFamily="'Space Mono', monospace" fontSize="9" fill="#4a6a80" letterSpacing="1.5">BAY 01</text>
+        <circle cx="72" cy="178" r="2" fill="#d0a050" />
+        <polygon points="120,165 120,345 240,345 240,180" fill="url(#ps-panel)" stroke="#2a3a4a" strokeWidth="1" />
+        <rect x="138" y="200" width="84" height="135" fill="#020608" stroke="#1a3040" />
+        <text x="180" y="190" textAnchor="middle" fontFamily="'Space Mono', monospace" fontSize="8" fill="#4a6a80" letterSpacing="1.5">BAY 02</text>
+        <circle cx="232" cy="188" r="1.8" fill="#4ade80" />
+        <polygon points="280,180 280,330 400,330 400,195" fill="url(#ps-panel)" stroke="#2a3a4a" strokeWidth="1" />
+        <rect x="298" y="210" width="84" height="115" fill="#020608" stroke="#1a3040" />
+        <text x="340" y="205" textAnchor="middle" fontFamily="'Space Mono', monospace" fontSize="7" fill="#4a6a80" letterSpacing="1.5">BAY 03</text>
+        <circle cx="392" cy="203" r="1.6" fill="#d05050" />
+        <polygon points="440,195 440,318 540,318 540,208" fill="url(#ps-panel)" stroke="#2a3a4a" strokeWidth="1" />
+        <rect x="455" y="220" width="70" height="92" fill="#020608" stroke="#1a3040" />
+        <text x="490" y="216" textAnchor="middle" fontFamily="'Space Mono', monospace" fontSize="6" fill="#4a6a80" letterSpacing="1.5">BAY 04</text>
+        <polygon points="580,210 580,308 660,308 660,220" fill="url(#ps-panel)" stroke="#2a3a4a" strokeWidth="1" />
+        <rect x="592" y="230" width="56" height="73" fill="#020608" stroke="#1a3040" />
+      </g>
+
+      {/* Right wall — filing-cabinet windows */}
+      <g>
+        <polygon points="1600,140 1600,360 1520,360 1520,170" fill="url(#ps-panel)" stroke="#2a3a4a" strokeWidth="1" />
+        <g>
+          {[180, 220, 260, 300].map((y, i) => (
+            <g key={i}>
+              <rect x="1530" y={y} width="22" height="34" fill="#0a1820" stroke="#2a3a4a" />
+              <rect x="1556" y={y} width="22" height="34" fill="#0a1820" stroke="#2a3a4a" />
+            </g>
+          ))}
+          <rect x="1530" y="180" width="22" height="34" fill="#1a3040" opacity="0.9" />
+          <rect x="1556" y="260" width="22" height="34" fill="#1a3040" opacity="0.9" />
+          <rect x="1530" y="300" width="22" height="34" fill="#1a3040" opacity="0.9" />
         </g>
-      ))}
-      {/* Stationary figure foreground */}
-      <ellipse cx="118" cy="130" rx="6" ry="5" fill="#8a9ba8" />
-      <rect x="112" y="130" width="12" height="38" fill="#8a9ba8" />
-      <rect x="108" y="168" width="20" height="3" fill="#0a0e14" />
-      {/* Distant figure stationary at vanishing */}
-      <rect x="237" y="128" width="6" height="14" fill="#3a4858" />
+        <polygon points="1480,165 1480,345 1360,345 1360,180" fill="url(#ps-panel)" stroke="#2a3a4a" strokeWidth="1" />
+        <g>
+          {[195, 232, 269, 306].map((y, row) => (
+            [1380, 1408, 1436].map((x, col) => (
+              <rect key={`${row}-${col}`} x={x} y={y} width="22" height="32"
+                fill={(row === 1 && col === 2) || (row === 2 && col === 1) ? '#1a3040' : '#0a1820'}
+                stroke="#2a3a4a" />
+            ))
+          ))}
+        </g>
+        <polygon points="1320,180 1320,330 1200,330 1200,195" fill="url(#ps-panel)" stroke="#2a3a4a" strokeWidth="1" />
+        <g>
+          {[208, 243, 278].map((y, row) => (
+            [1218, 1244, 1270, 1296].map((x, col) => (
+              <rect key={`${row}-${col}`} x={x} y={y} width="22" height="30"
+                fill={(row === 0 && col === 1) || (row === 2 && col === 2) ? '#1a3040' : '#0a1820'}
+                stroke="#2a3a4a" />
+            ))
+          ))}
+        </g>
+        <polygon points="1160,195 1160,318 1060,318 1060,208" fill="url(#ps-panel)" stroke="#2a3a4a" strokeWidth="1" />
+      </g>
+
+      {/* Mid-corridor figures */}
+      <g fill="#2a3a4a">
+        <rect x="540" y="350" width="6" height="22" />
+        <circle cx="543" cy="346" r="3.2" />
+        <rect x="546" y="358" width="6" height="8" fill="#3a3020" />
+        <rect x="1010" y="345" width="6" height="22" />
+        <circle cx="1013" cy="341" r="3.2" />
+        <rect x="1003" y="354" width="6" height="6" fill="#2a3030" />
+      </g>
+
+      {/* Suspended sign */}
+      <g transform="translate(800, 150)">
+        <rect x="-110" y="-12" width="220" height="22" fill="#0a1018" stroke="#2a3a4a" />
+        <text x="0" y="3" textAnchor="middle" fontFamily="'Space Mono', monospace" fontSize="11" fill="#4aafe0" letterSpacing="3">PORTSMITH STATION</text>
+        <text x="0" y="14" textAnchor="middle" fontFamily="'Space Mono', monospace" fontSize="6" fill="#4a6a80" letterSpacing="2">CONCOURSE A · LEVEL 04</text>
+        <line x1="-90" y1="-12" x2="-90" y2="-30" stroke="#2a3a4a" strokeWidth="0.7" />
+        <line x1="90" y1="-12" x2="90" y2="-30" stroke="#2a3a4a" strokeWidth="0.7" />
+      </g>
+
+      {/* Survey frame */}
+      <g stroke="#2a3a4a" strokeWidth="0.6" opacity="0.7" fill="none">
+        <line x1="20" y1="10" x2="40" y2="10" />
+        <line x1="20" y1="10" x2="20" y2="30" />
+        <line x1="1580" y1="10" x2="1560" y2="10" />
+        <line x1="1580" y1="10" x2="1580" y2="30" />
+        <line x1="20" y1="490" x2="40" y2="490" />
+        <line x1="20" y1="490" x2="20" y2="470" />
+        <line x1="1580" y1="490" x2="1560" y2="490" />
+        <line x1="1580" y1="490" x2="1580" y2="470" />
+      </g>
+      <text x="30" y="488" fontFamily="'Space Mono', monospace" fontSize="8" fill="#304050" letterSpacing="2">PLATE 04·A — PORTSMITH CONCOURSE</text>
+      <text x="1570" y="488" textAnchor="end" fontFamily="'Space Mono', monospace" fontSize="8" fill="#304050" letterSpacing="2">SCALE 1:1200</text>
     </svg>
   )
 }
 
 function SumpMainBay() {
   return (
-    <svg viewBox={VB} style={baseStyle} preserveAspectRatio="xMidYMid slice">
-      <rect width="480" height="200" fill="#0a0808" />
-      {/* Cavern silhouette */}
-      <path d="M 0 0 L 0 60 Q 60 90 90 70 Q 140 40 180 80 Q 220 110 260 70 Q 310 30 360 80 Q 420 110 480 70 L 480 0 Z" fill="#1a0a08" />
-      <path d="M 0 200 L 0 140 Q 70 180 130 150 Q 200 110 260 150 Q 320 180 380 145 Q 430 115 480 150 L 480 200 Z" fill="#1a0a08" />
-      {/* Industrial light pools */}
-      <ellipse cx="120" cy="120" rx="60" ry="22" fill="#c86030" opacity="0.18" />
-      <ellipse cx="340" cy="115" rx="80" ry="28" fill="#c86030" opacity="0.18" />
-      {/* Hanging stalactites of equipment */}
-      {[80, 160, 240, 320, 400].map((x, i) => (
-        <g key={i}>
-          <line x1={x} y1="0" x2={x + (i % 2 ? 4 : -4)} y2={26 + (i % 3) * 8} stroke="#3a2010" strokeWidth="2" />
-          <rect x={x - 5 + (i % 2 ? 4 : -4)} y={26 + (i % 3) * 8} width="10" height="6" fill="#5a3018" />
-        </g>
-      ))}
-      {/* Structural support trying its best */}
-      <line x1="60" y1="40" x2="60" y2="160" stroke="#5a3018" strokeWidth="3" />
-      <line x1="55" y1="155" x2="65" y2="160" stroke="#3a2010" strokeWidth="1" />
-      <line x1="420" y1="40" x2="420" y2="160" stroke="#5a3018" strokeWidth="3" />
-      {/* Warning sign (unreadable) */}
-      <rect x="220" y="100" width="40" height="20" fill="#c86030" />
-      <rect x="225" y="105" width="30" height="3" fill="#3a2010" />
-      <rect x="225" y="111" width="20" height="2" fill="#3a2010" />
-      {/* Small worker silhouette for scale */}
-      <rect x="180" y="146" width="3" height="10" fill="#0a0808" />
-      <rect x="178" y="156" width="7" height="2" fill="#0a0808" />
+    <svg viewBox={VB_PLATE} style={baseStyle} preserveAspectRatio="xMidYMid slice"
+         xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="sump-glow" cx="50%" cy="60%" r="60%">
+          <stop offset="0" stopColor="#ff8a30" stopOpacity="0.35" />
+          <stop offset="0.4" stopColor="#c84a10" stopOpacity="0.15" />
+          <stop offset="1" stopColor="#080202" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="sump-rock" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#2a1a14" />
+          <stop offset="1" stopColor="#0a0606" />
+        </linearGradient>
+        <radialGradient id="sump-lamp" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stopColor="#ffd080" />
+          <stop offset="0.4" stopColor="#ff8030" stopOpacity="0.85" />
+          <stop offset="1" stopColor="#ff8030" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      <rect width="1600" height="500" fill="#060202" />
+      <rect width="1600" height="500" fill="url(#sump-glow)" />
+
+      <path d="M 0,0 L 0,500 L 240,500 L 220,440 L 260,400 L 200,360 L 250,320 L 180,280 L 240,240 L 170,200 L 230,170 L 160,130 L 220,90 L 150,50 L 200,20 L 0,0 Z"
+        fill="url(#sump-rock)" stroke="#3a2018" strokeWidth="1.5" />
+      <path d="M 1600,0 L 1600,500 L 1380,500 L 1400,450 L 1360,410 L 1420,370 L 1370,330 L 1430,290 L 1370,250 L 1440,210 L 1380,170 L 1450,130 L 1390,90 L 1460,50 L 1400,20 L 1600,0 Z"
+        fill="url(#sump-rock)" stroke="#3a2018" strokeWidth="1.5" />
+      <path d="M 240,0 L 280,0 L 270,40 Z M 360,0 L 400,0 L 380,60 Z M 520,0 L 550,0 L 540,30 Z M 700,0 L 740,0 L 720,80 Z M 860,0 L 900,0 L 880,50 Z M 1020,0 L 1050,0 L 1040,40 Z M 1180,0 L 1220,0 L 1200,70 Z M 1340,0 L 1380,0 L 1360,40 Z"
+        fill="#0a0404" stroke="#3a2018" strokeWidth="0.8" />
+
+      <path d="M 240,500 L 240,440 Q 400,420 600,430 T 1000,420 T 1380,440 L 1380,500 Z" fill="#1a0e08" />
+      <path d="M 240,440 Q 400,420 600,430 T 1000,420 T 1380,440" stroke="#3a2018" strokeWidth="1.2" fill="none" />
+
+      {/* Mining rig */}
+      <g stroke="#5a3018" strokeWidth="1.5" fill="#1a0e08">
+        <polygon points="780,420 820,420 830,180 770,180" />
+        {[220, 260, 300, 340, 380].map(y => (
+          <line key={y} x1="780" y1={y} x2="820" y2={y} />
+        ))}
+        {[200, 240, 280, 320, 360].map(y => (
+          <g key={y}>
+            <line x1="775" y1={y} x2="825" y2={y + 40} />
+            <line x1="825" y1={y} x2="775" y2={y + 40} />
+          </g>
+        ))}
+        <polygon points="780,420 820,420 800,460" fill="#3a1808" />
+      </g>
+      <line x1="800" y1="180" x2="800" y2="40" stroke="#3a2018" strokeWidth="1" />
+
+      {/* Shacks */}
+      <g stroke="#5a3018" strokeWidth="1" fill="#1a0e08">
+        <rect x="380" y="408" width="80" height="32" />
+        <polygon points="380,408 460,408 450,396 390,396" />
+        <rect x="392" y="418" width="10" height="14" fill="#ff8030" opacity="0.85" />
+        <rect x="412" y="420" width="6" height="10" fill="#ffb060" opacity="0.7" />
+        <rect x="436" y="418" width="14" height="14" fill="#3a1808" />
+        <rect x="540" y="402" width="60" height="40" />
+        <polygon points="540,402 600,402 590,388 550,388" />
+        <rect x="552" y="416" width="10" height="14" fill="#ff8030" opacity="0.8" />
+        <rect x="572" y="416" width="14" height="18" fill="#3a1808" />
+        <rect x="980" y="404" width="100" height="38" />
+        <polygon points="980,404 1080,404 1070,390 990,390" />
+        <rect x="996" y="416" width="14" height="14" fill="#ffb060" opacity="0.85" />
+        <rect x="1020" y="416" width="14" height="14" fill="#ff8030" opacity="0.8" />
+        <rect x="1050" y="416" width="20" height="18" fill="#3a1808" />
+        <rect x="1160" y="414" width="60" height="28" />
+        <rect x="1170" y="424" width="8" height="10" fill="#ff8030" opacity="0.8" />
+      </g>
+
+      {/* Mining lamps strung across cavern roof */}
+      <g>
+        <path d="M 0,80 Q 200,140 400,110 T 800,130 T 1200,110 T 1600,90" fill="none" stroke="#3a2018" strokeWidth="0.8" />
+        {[
+          { x: 180, y: 128, r: 34 },
+          { x: 380, y: 115, r: 40 },
+          { x: 600, y: 124, r: 36 },
+          { x: 1000, y: 128, r: 42 },
+          { x: 1240, y: 118, r: 36 },
+          { x: 1440, y: 100, r: 32 },
+        ].map((l, i) => (
+          <g key={i}>
+            <circle cx={l.x} cy={l.y} r={l.r} fill="url(#sump-lamp)" />
+            <line x1={l.x} y1={l.y} x2={l.x} y2={l.y - 10} stroke="#3a2018" strokeWidth="0.8" />
+            <circle cx={l.x} cy={l.y} r="3.5" fill="#ffd080" />
+          </g>
+        ))}
+      </g>
+
+      {/* Tiny miners w/ helmet lamps */}
+      <g fill="#0a0404" stroke="#1a0a06" strokeWidth="0.6">
+        {[
+          { x: 500, y: 438 },
+          { x: 700, y: 436 },
+          { x: 900, y: 430 },
+          { x: 1120, y: 436 },
+        ].map((m, i) => (
+          <g key={i}>
+            <circle cx={m.x} cy={m.y} r="2.5" />
+            <rect x={m.x - 1.3} y={m.y + 2} width="2.6" height="8" />
+            <circle cx={m.x} cy={m.y - 1} r="0.8" fill="#ffb060" />
+          </g>
+        ))}
+      </g>
+
+      {/* Vapour drift */}
+      <g fill="#ff8030" opacity="0.06">
+        <ellipse cx="500" cy="380" rx="200" ry="20" />
+        <ellipse cx="1000" cy="370" rx="220" ry="18" />
+      </g>
+
+      {/* Survey frame */}
+      <g stroke="#3a2018" strokeWidth="0.6" opacity="0.7" fill="none">
+        <line x1="20" y1="10" x2="40" y2="10" />
+        <line x1="20" y1="10" x2="20" y2="30" />
+        <line x1="1580" y1="10" x2="1560" y2="10" />
+        <line x1="1580" y1="10" x2="1580" y2="30" />
+        <line x1="20" y1="490" x2="40" y2="490" />
+        <line x1="20" y1="490" x2="20" y2="470" />
+        <line x1="1580" y1="490" x2="1560" y2="490" />
+        <line x1="1580" y1="490" x2="1580" y2="470" />
+      </g>
+      <text x="30" y="488" fontFamily="'Space Mono', monospace" fontSize="8" fill="#5a3018" letterSpacing="2">PLATE 11·C — THE SUMP / WORKING FACE</text>
+      <text x="1570" y="488" textAnchor="end" fontFamily="'Space Mono', monospace" fontSize="8" fill="#5a3018" letterSpacing="2">DEPTH ~2.4 km</text>
     </svg>
   )
 }
@@ -279,49 +500,182 @@ function MarenQuarters() {
 
 function BellhavenSquare() {
   return (
-    <svg viewBox={VB} style={{ ...baseStyle, background: '#4a90d0' }} preserveAspectRatio="xMidYMid slice">
-      {/* Sky gradient */}
+    <svg viewBox={VB_PLATE} style={baseStyle} preserveAspectRatio="xMidYMid slice"
+         xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#6aa8e0" />
-          <stop offset="100%" stopColor="#a0c8e8" />
+        <linearGradient id="bh-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#1a2840" />
+          <stop offset="0.35" stopColor="#3a4a6a" />
+          <stop offset="0.65" stopColor="#a87858" />
+          <stop offset="0.85" stopColor="#d89060" />
+          <stop offset="1" stopColor="#e0a878" />
         </linearGradient>
+        <linearGradient id="bh-ground" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#3a2818" />
+          <stop offset="1" stopColor="#1a1208" />
+        </linearGradient>
+        <radialGradient id="bh-sun" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stopColor="#ffe8b0" />
+          <stop offset="0.5" stopColor="#ffb060" stopOpacity="0.6" />
+          <stop offset="1" stopColor="#ffb060" stopOpacity="0" />
+        </radialGradient>
       </defs>
-      <rect width="480" height="120" fill="url(#sky)" />
-      {/* Clouds */}
-      <ellipse cx="100" cy="40" rx="40" ry="10" fill="#fff" opacity="0.7" />
-      <ellipse cx="125" cy="36" rx="30" ry="8" fill="#fff" opacity="0.85" />
-      <ellipse cx="320" cy="55" rx="50" ry="11" fill="#fff" opacity="0.6" />
-      <ellipse cx="380" cy="50" rx="32" ry="9" fill="#fff" opacity="0.8" />
-      {/* Distant fields */}
-      <rect x="0" y="120" width="480" height="20" fill="#5a8a40" />
-      <rect x="0" y="140" width="480" height="14" fill="#7aa050" />
-      {/* Field rows */}
-      {[126, 132, 145, 152].map((y, i) => (
-        <line key={i} x1="0" y1={y} x2="480" y2={y} stroke="#3a6020" strokeWidth="0.6" opacity="0.6" />
-      ))}
-      {/* Foreground earth */}
-      <rect x="0" y="154" width="480" height="46" fill="#8a6a40" />
-      <rect x="0" y="154" width="480" height="3" fill="#6a4a20" />
-      {/* Buildings */}
-      <rect x="80" y="92" width="40" height="62" fill="#c0a070" stroke="#5a3a18" />
-      <polygon points="78,92 100,76 122,92" fill="#7a4a28" />
-      <rect x="92" y="120" width="8" height="20" fill="#3a2010" />
-      <rect x="106" y="108" width="8" height="8" fill="#4a90d0" />
-      {/* Water tower with banner */}
-      <g>
-        <rect x="240" y="80" width="6" height="74" fill="#5a4030" />
-        <rect x="262" y="80" width="6" height="74" fill="#5a4030" />
-        <rect x="226" y="60" width="56" height="22" fill="#7a6a5a" stroke="#3a2818" />
-        <rect x="232" y="56" width="44" height="6" fill="#5a4030" />
-        {/* Banner */}
-        <rect x="200" y="86" width="108" height="14" fill="#c83030" />
-        <text x="254" y="96" fontSize="6" fill="#fff" textAnchor="middle" fontFamily="monospace" letterSpacing="1">— STILL HERE —</text>
+
+      <rect width="1600" height="340" fill="url(#bh-sky)" />
+
+      <g fill="#e0d8c0" opacity="0.7">
+        <circle cx="120" cy="40" r="0.7" />
+        <circle cx="220" cy="72" r="1" />
+        <circle cx="380" cy="20" r="0.8" />
+        <circle cx="500" cy="55" r="0.6" />
+        <circle cx="180" cy="90" r="0.5" />
+        <circle cx="60" cy="120" r="0.7" />
+        <circle cx="320" cy="100" r="0.5" />
+        <circle cx="440" cy="130" r="0.6" />
       </g>
-      {/* Right building */}
-      <rect x="360" y="100" width="50" height="54" fill="#a08050" stroke="#5a3a18" />
-      <polygon points="358,100 385,82 412,100" fill="#7a4a28" />
-      <rect x="378" y="124" width="10" height="22" fill="#3a2010" />
+      <g fill="#fff8e0" opacity="0.4">
+        <circle cx="640" cy="48" r="0.7" />
+        <circle cx="720" cy="80" r="0.5" />
+      </g>
+
+      <circle cx="1180" cy="320" r="180" fill="url(#bh-sun)" />
+      <circle cx="1180" cy="320" r="38" fill="#ffe8b0" />
+
+      <g fill="#e8c098" opacity="0.55">
+        <ellipse cx="380" cy="220" rx="220" ry="6" />
+        <ellipse cx="900" cy="200" rx="280" ry="5" />
+        <ellipse cx="1380" cy="240" rx="180" ry="6" />
+        <ellipse cx="160" cy="260" rx="160" ry="4" />
+      </g>
+      <g fill="#d8a878" opacity="0.7">
+        <ellipse cx="600" cy="240" rx="180" ry="3" />
+        <ellipse cx="1100" cy="220" rx="220" ry="4" />
+      </g>
+
+      {/* Birds */}
+      <g stroke="#1a1208" strokeWidth="1.4" fill="none" strokeLinecap="round">
+        <path d="M 460,150 q 4,-4 8,0 q 4,-4 8,0" />
+        <path d="M 500,170 q 3,-3 6,0 q 3,-3 6,0" />
+        <path d="M 540,140 q 3,-3 6,0 q 3,-3 6,0" />
+      </g>
+
+      <line x1="0" y1="340" x2="1600" y2="340" stroke="#5a3a20" strokeWidth="0.8" opacity="0.6" />
+
+      <path d="M 0,340 Q 200,300 400,320 T 800,310 T 1200,320 T 1600,300 L 1600,340 Z" fill="#2a1e18" opacity="0.85" />
+      <path d="M 0,340 Q 300,320 600,335 T 1100,328 T 1600,335 L 1600,340 Z" fill="#1a1208" opacity="0.8" />
+
+      {/* Settlement silhouette */}
+      <g fill="#0a0606" stroke="#2a1808" strokeWidth="0.8">
+        <polygon points="240,340 244,225 250,200 256,225 260,340" />
+        <line x1="244" y1="240" x2="260" y2="240" stroke="#2a1808" />
+        <line x1="244" y1="265" x2="260" y2="265" stroke="#2a1808" />
+        <circle cx="252" cy="200" r="2.5" fill="#d05050" />
+        <path d="M 300,340 Q 300,290 340,290 Q 380,290 380,340 Z" />
+        <rect x="316" y="318" width="6" height="10" fill="#ffd080" />
+        <rect x="332" y="316" width="6" height="12" fill="#ffd080" />
+        <rect x="350" y="318" width="6" height="10" fill="#ffd080" />
+        <rect x="400" y="304" width="60" height="36" />
+        <polygon points="400,304 430,290 460,304" />
+        <rect x="408" y="316" width="6" height="10" fill="#ffd080" />
+        <rect x="422" y="316" width="6" height="10" fill="#ffd080" />
+        <rect x="436" y="316" width="6" height="10" fill="#ffd080" />
+        <rect x="450" y="316" width="6" height="10" fill="#ffd080" />
+        <rect x="490" y="298" width="14" height="42" />
+        <ellipse cx="497" cy="298" rx="7" ry="3" />
+        <rect x="510" y="294" width="14" height="46" />
+        <ellipse cx="517" cy="294" rx="7" ry="3" />
+        <rect x="530" y="300" width="14" height="40" />
+        <ellipse cx="537" cy="300" rx="7" ry="3" />
+        <rect x="580" y="316" width="120" height="24" />
+        <line x1="580" y1="320" x2="700" y2="320" stroke="#2a1808" />
+        {[592, 612, 632, 652, 672].map((x, i) => (
+          <rect key={x} x={x} y="324" width="8" height="12" fill="#ffd080" opacity={i % 2 ? 1 : 0.7} />
+        ))}
+        <rect x="720" y="318" width="20" height="22" />
+        <polygon points="720,318 730,310 740,318" />
+        <rect x="724" y="324" width="4" height="6" fill="#ffd080" />
+        <rect x="744" y="320" width="18" height="20" />
+        <polygon points="744,320 753,313 762,320" />
+        <rect x="748" y="326" width="4" height="6" fill="#ffd080" />
+        <rect x="766" y="316" width="22" height="24" />
+        <polygon points="766,316 777,308 788,316" />
+        <rect x="770" y="322" width="4" height="6" fill="#ffd080" />
+        <rect x="780" y="322" width="4" height="6" fill="#ffd080" />
+        <rect x="810" y="296" width="22" height="30" />
+        <ellipse cx="821" cy="296" rx="11" ry="4" />
+        <rect x="817" y="326" width="3" height="14" />
+        <rect x="824" y="326" width="3" height="14" />
+        <polygon points="850,340 850,318 880,310 910,318 910,340" />
+        <rect x="858" y="322" width="44" height="18" fill="#1a3018" stroke="#2a1808" />
+      </g>
+      <g fill="#1a0e08" stroke="#2a1808" strokeWidth="0.6" opacity="0.85">
+        <rect x="940" y="324" width="36" height="16" />
+        <polygon points="940,324 958,316 976,324" />
+        <rect x="950" y="328" width="4" height="6" fill="#ffd080" />
+        <rect x="966" y="328" width="4" height="6" fill="#ffd080" />
+        <rect x="990" y="326" width="28" height="14" />
+        <rect x="998" y="330" width="3" height="5" fill="#ffd080" />
+        <rect x="1030" y="322" width="20" height="18" />
+        <polygon points="1030,322 1040,316 1050,322" />
+        <rect x="1036" y="328" width="3" height="5" fill="#ffd080" />
+      </g>
+
+      {/* Foreground */}
+      <rect x="0" y="340" width="1600" height="160" fill="url(#bh-ground)" />
+      <g stroke="#1a1208" strokeWidth="0.8" fill="none" opacity="0.55">
+        <path d="M 0,360 Q 800,355 1600,360" />
+        <path d="M 0,378 Q 800,374 1600,378" />
+        <path d="M 0,398 Q 800,394 1600,398" />
+        <path d="M 0,420 Q 800,418 1600,420" />
+        <path d="M 0,448 Q 800,446 1600,448" />
+      </g>
+
+      {/* Footpath */}
+      <path d="M 1100,500 Q 900,460 700,420 T 460,360" stroke="#5a4028" strokeWidth="6" fill="none" opacity="0.7" />
+      <path d="M 1100,500 Q 900,460 700,420 T 460,360" stroke="#7a5838" strokeWidth="2" fill="none" opacity="0.8" strokeDasharray="2 4" />
+
+      {/* Fence */}
+      <g stroke="#1a0a06" strokeWidth="2.2" fill="none">
+        <line x1="60" y1="500" x2="80" y2="372" />
+        <line x1="280" y1="500" x2="270" y2="380" />
+        <line x1="500" y1="498" x2="470" y2="392" />
+      </g>
+      <g stroke="#1a0a06" strokeWidth="1.6" fill="none" opacity="0.85">
+        <path d="M 60,420 Q 280,400 500,418" />
+        <path d="M 60,460 Q 280,438 500,456" />
+      </g>
+
+      {/* Walking colonist */}
+      <g>
+        <circle cx="980" cy="424" r="3" fill="#0a0604" />
+        <ellipse cx="980" cy="421.5" rx="4.5" ry="1.4" fill="#0a0604" />
+        <rect x="978.5" y="426" width="3" height="10" fill="#0a0604" />
+        <line x1="980" y1="436" x2="978" y2="442" stroke="#0a0604" strokeWidth="1.4" />
+        <line x1="980" y1="436" x2="982" y2="442" stroke="#0a0604" strokeWidth="1.4" />
+        <line x1="980" y1="430" x2="976" y2="434" stroke="#0a0604" strokeWidth="1.2" />
+        <line x1="980" y1="430" x2="984" y2="434" stroke="#0a0604" strokeWidth="1.2" />
+      </g>
+      <ellipse cx="970" cy="446" rx="24" ry="2" fill="#0a0604" opacity="0.4" />
+
+      <g stroke="#1a0e08" strokeWidth="1" fill="none" opacity="0.8">
+        <path d="M 200,500 Q 198,488 196,480 M 200,500 Q 200,488 200,478 M 200,500 Q 202,488 204,482" />
+        <path d="M 720,500 Q 718,490 716,484 M 720,500 Q 720,488 720,480 M 720,500 Q 722,490 724,486" />
+        <path d="M 1320,500 Q 1318,492 1316,486 M 1320,500 Q 1320,490 1320,484 M 1320,500 Q 1322,492 1324,488" />
+      </g>
+
+      {/* Survey frame */}
+      <g stroke="#5a3a20" strokeWidth="0.6" opacity="0.7" fill="none">
+        <line x1="20" y1="10" x2="40" y2="10" />
+        <line x1="20" y1="10" x2="20" y2="30" />
+        <line x1="1580" y1="10" x2="1560" y2="10" />
+        <line x1="1580" y1="10" x2="1580" y2="30" />
+        <line x1="20" y1="490" x2="40" y2="490" />
+        <line x1="20" y1="490" x2="20" y2="470" />
+        <line x1="1580" y1="490" x2="1560" y2="490" />
+        <line x1="1580" y1="490" x2="1580" y2="470" />
+      </g>
+      <text x="30" y="488" fontFamily="'Space Mono', monospace" fontSize="8" fill="#5a3a20" letterSpacing="2">PLATE 02·B — BELLHAVEN, FIRST LIGHT</text>
+      <text x="1570" y="488" textAnchor="end" fontFamily="'Space Mono', monospace" fontSize="8" fill="#5a3a20" letterSpacing="2">SURVEY 2089</text>
     </svg>
   )
 }

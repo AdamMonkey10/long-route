@@ -1,5 +1,9 @@
 import { useEffect } from 'react'
 
+// The Compendium reads as a dedicated CRT screen the player consults — VT323
+// pixel-font on near-black phosphor green, scanlines, soft vignette, glow.
+// Everything in the Style Guide §05 lands here.
+
 export function GuidePanel({ entry, onDismiss }) {
   useEffect(() => {
     const onKey = e => {
@@ -31,49 +35,55 @@ export function GuidePanel({ entry, onDismiss }) {
         role="dialog"
         aria-label="Compendium entry"
         style={{
-          width: 'min(440px, 92vw)',
-          background: '#050a05',
-          border: '2px solid #40ff80',
+          width: 'min(560px, 96vw)',
+          background: 'var(--phosphor-bg)',
+          border: '1px solid #0a3a18',
           borderRight: 'none',
-          color: '#80ff80',
-          padding: '14px 16px',
-          fontFamily: "'Space Mono', ui-monospace, monospace",
+          color: 'var(--phosphor)',
+          padding: '24px 26px 28px',
+          fontFamily: 'var(--font-phosphor)',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 0 24px rgba(64, 255, 128, 0.18) inset, -4px 0 30px rgba(64, 255, 128, 0.15)',
+          boxShadow:
+            'inset 0 0 80px rgba(0, 60, 20, 0.5), inset 0 0 8px rgba(127, 255, 138, 0.08), -8px 0 30px rgba(0,0,0,0.55)',
+          textShadow: '0 0 6px var(--phosphor-glow), 0 0 1px var(--phosphor)',
           overflowY: 'auto',
           position: 'relative',
         }}
       >
         <div className="guide-scanlines" aria-hidden />
+        <div className="guide-vignette" aria-hidden />
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10, position: 'relative' }}>
-          <div>
-            <div style={{ fontSize: 9, letterSpacing: 3, color: '#40c060', marginBottom: 3 }}>
-              THE INDEPENDENT TRAVELLER&apos;S COMPENDIUM TO FRONTIER SPACE
-            </div>
-            <div style={{ fontSize: 9, color: '#207040', letterSpacing: 2, marginBottom: 4 }}>
-              FREE CARTOGRAPHERS&apos; ASSOCIATION
-            </div>
-            <div style={{ fontSize: 11, color: '#a0ffa0', letterSpacing: 1 }}>
-              ENTRY: {entry.title}
-            </div>
-          </div>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-end',
+            paddingBottom: 8,
+            marginBottom: 14,
+            borderBottom: '1px solid var(--phosphor-dim)',
+            position: 'relative',
+            fontSize: 18,
+            letterSpacing: 2,
+          }}
+        >
+          <span style={{ fontWeight: 700, color: 'var(--phosphor)' }}>▌ COMPENDIUM</span>
           <button
             onClick={onDismiss}
             aria-label="Dismiss Compendium entry"
             style={{
               background: 'transparent',
-              border: '1px solid #207040',
-              color: '#60c080',
-              width: 22,
-              height: 22,
+              border: '1px solid var(--phosphor-dim)',
+              color: 'var(--phosphor)',
+              width: 24,
+              height: 24,
               borderRadius: 3,
               cursor: 'pointer',
-              fontSize: 12,
+              fontSize: 14,
               lineHeight: 1,
               padding: 0,
               flexShrink: 0,
+              fontFamily: 'inherit',
             }}
           >
             ✕
@@ -82,13 +92,49 @@ export function GuidePanel({ entry, onDismiss }) {
 
         <div
           style={{
-            color: '#80ff80',
-            fontSize: 12,
-            lineHeight: 1.7,
+            color: 'var(--phosphor-dim)',
+            fontSize: 14,
+            letterSpacing: 2,
+            marginBottom: 6,
+            position: 'relative',
+          }}
+        >
+          THE INDEPENDENT TRAVELLER&apos;S COMPENDIUM TO FRONTIER SPACE
+        </div>
+        <div
+          style={{
+            color: 'var(--phosphor-dim)',
+            fontSize: 13,
+            letterSpacing: 2,
+            marginBottom: 14,
+            position: 'relative',
+          }}
+        >
+          — Free Cartographers&apos; Association
+        </div>
+
+        <div
+          style={{
+            color: 'var(--phosphor)',
+            fontSize: 24,
+            letterSpacing: 1,
+            lineHeight: 1.1,
+            marginBottom: 18,
+            position: 'relative',
+          }}
+        >
+          ENTRY: {entry.title}
+        </div>
+
+        <div
+          style={{
+            color: 'var(--phosphor)',
+            fontSize: 20,
+            lineHeight: 1.4,
+            letterSpacing: 0.5,
             whiteSpace: 'pre-wrap',
             flex: 1,
             position: 'relative',
-            textShadow: '0 0 6px rgba(80, 255, 128, 0.2)',
           }}
         >
           {entry.text}
@@ -96,20 +142,22 @@ export function GuidePanel({ entry, onDismiss }) {
 
         <div
           style={{
-            marginTop: 16,
+            marginTop: 22,
             paddingTop: 10,
-            borderTop: '1px dashed #207040',
+            borderTop: '1px solid var(--phosphor-dim)',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'baseline',
-            color: '#40c060',
-            fontSize: 9,
-            letterSpacing: 3,
+            color: 'var(--phosphor-dim)',
+            fontSize: 14,
+            letterSpacing: 2,
             position: 'relative',
           }}
         >
           <span>DON&apos;T GET LOST.</span>
-          <span style={{ color: '#205a30' }}>END OF ENTRY</span>
+          <span>
+            <span className="guide-cursor" aria-hidden>█</span> END OF ENTRY
+          </span>
         </div>
       </div>
     </div>
@@ -132,6 +180,7 @@ export function GuideButton({ onClick }) {
         cursor: 'pointer',
         fontSize: 11,
         letterSpacing: 1,
+        fontFamily: 'var(--font-mono)',
       }}
     >
       ▤ COMPENDIUM
