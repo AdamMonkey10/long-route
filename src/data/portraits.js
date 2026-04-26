@@ -35,4 +35,7 @@ export const PORTRAIT_DATA = {
   linnea: { bg: '#0a1820', face: '#d0c0b0', hair: '#806040', eye: '#a0c0e0', exp: 'sharp' },
   dayo: { bg: '#1a1408', face: '#80502f', hair: '#1a0808', eye: '#80c0a0', exp: 'wide' },
   dayo_uncle: { bg: '#1a1208', face: '#704030', hair: '#605050', eye: '#a08060', exp: 'kind' },
+  petra: { bg: '#0a1218', face: '#a08070', hair: '#3a2a1a', eye: '#80a0a0', exp: 'sharp' },
+  two_fingers: { bg: '#180808', face: '#806040', hair: '#1a0808', eye: '#c08040', exp: 'amused' },
+  chaplain: { bg: '#0a0a0a', face: '#806050', hair: '#3a3a3a', eye: '#a0a090', exp: 'knowing' },
 }

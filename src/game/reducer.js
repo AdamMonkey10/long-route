@@ -382,6 +382,12 @@ export function reducer(state, action) {
         }
       }
       let ns = { ...state }
+      if (opt.costCredits) {
+        if (state.credits < opt.costCredits) {
+          return { ...state, notification: `Need ${opt.costCredits}cr.` }
+        }
+        ns.credits = state.credits - opt.costCredits
+      }
       if (opt.costCargo) {
         ns.cargo = ns.cargo
           .map(c => (c.id === opt.costCargo ? { ...c, qty: c.qty - opt.costQty } : c))

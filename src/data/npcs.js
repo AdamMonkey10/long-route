@@ -162,14 +162,28 @@ export const NPCS = {
     title: 'Proprietor',
     portrait: 'duchess',
     greeting: "You're not from here. I can tell because you look like you can see properly. What do you want?",
+    entry: [
+      { requireFlag: 'sump_conflict_resolved', node: 'root_after_resolution' },
+      { requireFlag: 'sump_conflict_escalated', node: 'root_after_escalation' },
+      { requireFlag: 'chose_two_fingers', requireNotFlags: ['sump_conflict_resolved', 'sump_conflict_escalated'],
+        node: 'root_confrontation' },
+      { node: 'root' },
+    ],
     tree: {
       root: {
         text: "I don't deal in contraband. I deal in goods whose legal status is subject to ongoing philosophical debate between myself and various law enforcement agencies.",
+        flagsOnEnter: ['duchess_trust'],
         options: [
           { text: "I'm looking for Smee.", go: 'smee' },
           { text: "What's trading well here?", go: 'trade' },
+          { text: "Anyone here who actually understands the structural reports?", go: 'petra_intro' },
           { text: "Just browsing.", go: null },
         ],
+      },
+      petra_intro: {
+        text: "[A long, careful look.]\n\nThat's a particular question. If you're asking it, you're either a Combine inspector — which you aren't — or you've been thinking about the cracks.\n\nEngineering Level. Petra runs it. Tell her I sent you. She won't trust you on the strength of that, but she will let you in.",
+        options: [{ text: "Thank you.", go: null,
+          flag: 'petra_intro', flagLabel: '🛠 Petra — Engineering Level' }],
       },
       smee: {
         text: "Bay 7, lower docks. He's not well — cave-in last month. What do you want with Smee?",
@@ -189,6 +203,72 @@ export const NPCS = {
       trade: {
         text: "Ore cheap. Food and medical premium. Real money: Kessel pays triple for anything not on the manifest. The Wreck buys everything, no questions.",
         options: [{ text: "Thanks.", go: null }],
+      },
+
+      root_confrontation: {
+        text: "[She doesn't pretend to be casual this time.]\n\nYou've been buying from the boy. Two-Fingers. He sells cheaper because he's reckless and because he owes me — has owed me since before he could spell the word 'principal.'\n\nSo. The way I see it: you can settle this, or it settles itself. Settling itself is bad for everyone, including the people on this asteroid who don't know there's anything to settle.\n\nWhat do you want to do?",
+        options: [
+          { text: '"How much would settle the debt?"', go: 'conf_amount' },
+          { text: '"The Chaplain will mediate."', go: 'conf_chaplain',
+            requireFlag: 'chaplain_trust' },
+          { text: '"This isn\'t my fight."', go: 'conf_walk' },
+          { text: '"Tell me your version of the debt."', go: 'conf_version' },
+        ],
+      },
+      conf_version: {
+        text: "Fifteen years ago he and his father ran a freight crew off this rock. They lost a shipment that wasn't theirs to lose. The father paid me back in full. The boy didn't pay back his half — said he wasn't bound by his father's debts.\n\n[A pause.]\n\nThe father died eight years ago. The boy still hasn't paid. Five hundred credits. He has had fifteen years to find five hundred credits.\n\nIf you want to know more, ask him. Ask the Chaplain. The Chaplain was there.",
+        options: [
+          { text: '"How much would settle the debt?"', go: 'conf_amount' },
+          { text: '"I\'ll think about it."', go: null },
+        ],
+      },
+      conf_amount: {
+        text: "Five hundred. The original sum. Not a credit more, not for fifteen years of patience.\n\nIf you pay it for him, the matter closes. He owes you, not me. That seems fairer than the alternative.",
+        options: [
+          { text: '[Pay 500cr.]', go: 'conf_paid', costCredits: 500 },
+          { text: '"That\'s a lot of credits."', go: null },
+        ],
+      },
+      conf_paid: {
+        text: "[The transfer goes through. She nods, slowly, almost imperceptibly.]\n\nThe matter is closed. The boy owes you, which is your problem now. I'd suggest you collect what you can in goodwill. Money never quite arrives.\n\n[Quieter.]\n\nThank you, Captain. You didn't have to.",
+        flagsOnEnter: ['sump_conflict_resolved'],
+        options: [{ text: '[Nod. Leave.]', go: null,
+          frontierDelta: 5, flag: 'sump_paid_msg', flagLabel: '✓ Sump debt closed' }],
+      },
+      conf_chaplain: {
+        text: "[A long, considering look.]\n\nThe Chaplain. Of course.\n\nIf he's willing, I'll listen. He was there. He knows whose version of the truth has the right shape.\n\nFetch him.",
+        options: [
+          { text: '[Bring the Chaplain.]', go: 'conf_chaplain_done',
+            requireFlag: 'chaplain_mediated', flag: 'sump_conflict_resolved',
+            flagLabel: '✓ Chaplain mediated' },
+          { text: '"He needs to agree first."', go: null },
+        ],
+      },
+      conf_chaplain_done: {
+        text: "[The Chaplain stands, mostly silent, between you and the Duchess. He says perhaps thirty words. The Duchess listens. The boy is fetched. He listens too.]\n\n[Eventually:]\n\nThe debt is renegotiated. Forgiveness on the principal in exchange for the boy doing six months of work for me at cost. He looks like he might cry. He does not.\n\n[A small bow to the Chaplain, gracious.]\n\nThank you, Captain.",
+        flagsOnEnter: ['sump_conflict_resolved'],
+        options: [{ text: '[Leave them to it.]', go: null,
+          frontierDelta: 8 }],
+      },
+      conf_walk: {
+        text: "[A long, flat look.]\n\nThen it settles itself. He'll be gone within the week. He hasn't the spine for it, and he hasn't paid in fifteen years.\n\nDon't say I gave you no chance.",
+        flagsOnEnter: ['sump_conflict_escalated', 'two_fingers_left'],
+        options: [{ text: '[Leave.]', go: null }],
+      },
+
+      root_after_resolution: {
+        text: "[A small, dry smile.]\n\nThings are quieter than they were. Thank you for that.",
+        options: [
+          { text: "What's trading well here?", go: 'trade' },
+          { text: '[Leave.]', go: null },
+        ],
+      },
+      root_after_escalation: {
+        text: "[She doesn't smile this time. The other half of her bay is empty.]\n\nThe boy is gone. The matter is closed. There were better ways to close it. We are where we are.\n\nWhat do you need?",
+        options: [
+          { text: "What's trading well here?", go: 'trade' },
+          { text: '[Leave.]', go: null },
+        ],
       },
     },
   },
@@ -645,7 +725,16 @@ export const NPCS = {
           { text: "What are you missing?", go: 'missing' },
           { text: "What do you know?", go: 'knows' },
           { text: "I might have what you need.", go: 'have' },
+          { text: "[Hand over Petra's report from the Sump.]", go: 'petra_report',
+            requireFlag: 'petra_ignored',
+            requireNotFlag: 'petra_resolved' },
         ],
+      },
+      petra_report: {
+        text: "[He reads the wafer's contents on his terminal. His expression goes from professional interest to something quieter.]\n\nEighteen months. Forty thousand people. Combine's Mining Oversight Office filed the engineer's escalation in a drawer.\n\n[He looks up.]\n\nI'll have this published in three independent outlets by tomorrow. The Combine cannot now claim ignorance. Whether they evacuate the asteroid is the next question — but at least the question is a public one now.\n\nThank you, Captain. This is exactly what I'm here for.",
+        flagsOnEnter: ['petra_resolved'],
+        options: [{ text: '[Nod. Leave.]', go: null,
+          frontierDelta: 10, flag: 'petra_published_msg', flagLabel: '✓ Petra\'s report published' }],
       },
       missing: {
         text: "Authenticated source documents. Combine records from 2051 to 2053. I have testimonies, manifests, two former Combine employees on background.\n\nNone of it publishable without primary documents. They can say it's fabricated.",
@@ -704,7 +793,15 @@ export const NPCS = {
           { text: "What kind of queries?", go: 'queries' },
           { text: "She's been gone seven years.", go: 'gone' },
           { text: "Any legitimate work?", go: 'work' },
+          { text: "[Hand over Petra's report.]", go: 'petra_report',
+            requireFlag: 'petra_message_carry',
+            requireNotFlag: 'petra_message_delivered' },
         ],
+      },
+      petra_report: {
+        text: "[She takes the data wafer with the precise grip of someone who handles many wafers and remembers none of them.]\n\nA structural concern from The Sump. Yes. We are aware. The Combine's Mining Oversight Office will review it on the established schedule.\n\n[A faint smile.]\n\nThank you, Captain. Your civic engagement is noted.\n\n[She files it, in the precise sense of the word: a drawer opens, the wafer goes into it, the drawer closes.]",
+        flagsOnEnter: ['petra_message_delivered'],
+        options: [{ text: '[Leave.]', go: null }],
       },
       queries: {
         text: "Administrative. As I said.\n\n[Long pause]\n\nYou might do well to stick to established routes. Traders who operate in stable, monitored lanes tend to have very long and uneventful careers.",
@@ -1493,6 +1590,275 @@ export const NPCS = {
       v3_more: {
         text: "There's a cartographer at Meridian who buys system locations like that one. She's been looking for it for years. If you don't go yourself, sell it to her. She'll know what to do.\n\nThat's all. I'm out of stories.",
         options: [{ text: "Understood.", go: null }],
+      },
+    },
+  },
+
+  petra: {
+    id: 'petra',
+    name: 'Petra',
+    title: 'Structural Engineer, The Sump',
+    portrait: 'petra',
+    greeting: "[A small office, three monitors, a stack of pressure readouts.]\n\nThe Duchess sent you. Which means you're either useful or about to become a problem. Which is it?",
+    entry: [
+      { requireFlag: 'petra_resolved', node: 'root_resolved' },
+      { requireFlag: 'petra_ignored', node: 'root_ignored' },
+      { requireFlag: 'petra_message_delivered', node: 'root_delivered' },
+      { requireFlag: 'petra_message', node: 'root_carrying' },
+      { requireMinVisits: 2, node: 'root_v2' },
+      { node: 'root' },
+    ],
+    tree: {
+      root: {
+        text: "[She stops typing.]\n\nSixty years of mining. Eighteen months of structural margin. The classified reports — which I wrote, and which I have read — are unambiguous about both numbers.\n\nNobody has read the reports. They are classified. The classification is also classified.\n\nI would like a third party to know.",
+        options: [
+          { text: '"How long, exactly?"', go: 'r_when' },
+          { text: '"What do you need from me?"', go: 'r_need' },
+          { text: '"Why hasn\'t this been escalated?"', go: 'r_why_not' },
+        ],
+      },
+      r_when: {
+        text: "Thursdays.\n\n[She does not elaborate.]",
+        options: [
+          { text: '"Right."', go: null },
+          { text: '"What do you need from me?"', go: 'r_need' },
+        ],
+      },
+      r_why_not: {
+        text: "Because the procedure for escalating a classified structural finding is to file a Form 14-Bravo, in triplicate, with the Combine's Mining Oversight Office. Which I have done. Eleven times.\n\nI have received eleven receipts.\n\nThis is the procedure working as intended.",
+        options: [
+          { text: '"What do you need from me?"', go: 'r_need' },
+        ],
+      },
+      r_need: {
+        text: "Carry a sealed report to the Combine engineering office at New Cascadia. Hand it to whoever takes registrations. Wait for an answer.\n\n[She slides a data wafer across.]\n\nThey will ignore it. I would like to be able to say I tried before I do the thing I'm going to do next.",
+        flagsOnEnter: ['petra_message'],
+        options: [
+          { text: '"What\'s the next thing?"', go: 'r_next' },
+          { text: '[Take the wafer.]', go: null,
+            flag: 'petra_message_carry', flagLabel: '📎 Petra\'s sealed report' },
+        ],
+      },
+      r_next: {
+        text: "If New Cascadia ignores it — when New Cascadia ignores it — I'll ask you to carry it louder. Somewhere it cannot be filed. Somewhere it gets read.\n\nWe'll talk again then.",
+        options: [
+          { text: '[Take the wafer.]', go: null,
+            flag: 'petra_message_carry', flagLabel: '📎 Petra\'s sealed report' },
+        ],
+      },
+
+      root_v2: {
+        text: "[She glances up.]\n\nStill thinking, or did you decide?",
+        options: [
+          { text: '"What do you need?"', go: 'r_need' },
+          { text: '[Leave.]', go: null },
+        ],
+      },
+      root_carrying: {
+        text: "[A small nod at the wafer in your pocket.]\n\nNew Cascadia. Combine engineering. Don't open it. Don't lose it. Tell them it's from me, then watch what they do.",
+        options: [{ text: '[Nod.]', go: null }],
+      },
+      root_delivered: {
+        text: "[She looks up, something close to hope on her face.]\n\nThey took it?",
+        options: [
+          { text: '"They filed it."', go: 'r_filed' },
+        ],
+      },
+      r_filed: {
+        text: "[A long, controlled breath.]\n\nOf course they did.\n\nThen we go louder. Take the wafer to a journalist — Barker Ness at New Geneva. He's banned from six systems for caring about exactly this kind of thing. He'll know what to do.",
+        flagsOnEnter: ['petra_ignored'],
+        options: [
+          { text: '"I\'ll take it to him."', go: null,
+            flag: 'petra_message_carry', flagLabel: '📎 Petra\'s report (try again)' },
+        ],
+      },
+      root_ignored: {
+        text: "[She nods at you as you come in.]\n\nThe wafer with you?\n\nBarker Ness, New Geneva. He'll publish it where it can't be filed away.",
+        options: [{ text: '[Leave.]', go: null }],
+      },
+      root_resolved: {
+        text: "[She stands when you come in this time.]\n\nThe report is published. Three independent outlets carried it within the hour. The Combine cannot now claim ignorance. Whether they evacuate the asteroid is another question — but at least the question now exists.\n\n[She grips your shoulder, briefly. It's the warmest she's been.]\n\nThank you, Captain.",
+        flagsOnEnter: ['petra_section_7'],
+        options: [{ text: '[Nod. Leave.]', go: null,
+          frontierDelta: 15, flag: 'petra_resolved_msg', flagLabel: '✓ Petra\'s report is public' }],
+      },
+    },
+  },
+
+  two_fingers: {
+    id: 'two_fingers',
+    name: 'Two-Fingers',
+    title: 'Fence',
+    portrait: 'two_fingers',
+    greeting: "[A young man at a folding table, three crates beside him, chewing something he definitely should not be chewing in a pressurised environment.]\n\nDuchess sent you? She always sends them to me eventually.",
+    entry: [
+      { requireFlag: 'sump_conflict_resolved', node: 'root_after_resolution' },
+      { requireFlag: 'sump_conflict_escalated', node: 'root_gone' },
+      { requireFlag: 'chose_two_fingers', node: 'root_returning' },
+      { node: 'root' },
+    ],
+    tree: {
+      root: {
+        text: "I do prices. The Duchess does narratives. People who prefer prices to narratives prefer me.\n\nWhat are you here for? I assume something specific. People come to my table for specific things.",
+        options: [
+          { text: '"What\'s your deal?"', go: 'r_deal' },
+          { text: '"Why are your prices so good?"', go: 'r_prices' },
+          { text: '"The Duchess says you owe her."', go: 'r_duchess' },
+          { text: '[Leave.]', go: null },
+        ],
+      },
+      r_deal: {
+        text: "[A grin, sharp.]\n\nMy deal is: ten percent under whatever the Duchess is charging. Same goods, sometimes literally the same goods. I'm faster, I'm hungrier, and I'm not afraid of customs the way she is.\n\nFair warning: doing business with me means doing business with me. The Duchess takes it personally.",
+        options: [
+          { text: '"I\'ll keep that in mind."', go: null },
+          { text: '"Fine. I\'ll deal with you."', go: 'r_deal_set',
+            flag: 'chose_two_fingers', flagLabel: '⚠ The Duchess will hear about this' },
+        ],
+      },
+      r_deal_set: {
+        text: "[A grin, considerably brighter.]\n\nGood man. Or — good captain, whichever. Come back when you've got something. I'll have something for you.",
+        options: [{ text: '[Leave.]', go: null }],
+      },
+      r_prices: {
+        text: "Lower overhead. I don't have a bay. I don't pay for a bay. I have a folding table.\n\nAlso — and this is between us — I'm working off something. The principal won't change. Working it off doesn't make it bigger.",
+        options: [
+          { text: '"Working off what?"', go: 'r_working_off' },
+          { text: '"Fine. I\'ll deal with you."', go: 'r_deal_set',
+            flag: 'chose_two_fingers' },
+        ],
+      },
+      r_working_off: {
+        text: "[The grin slips. Briefly.]\n\nA debt. Old one. My father's, technically. Mine, since he died. The Duchess tells one version. I tell another. The Chaplain saw what actually happened.\n\nIf you're curious — go ask the Chaplain. I'd rather you heard it from him than from either of us.",
+        options: [
+          { text: '"I\'ll talk to the Chaplain."', go: null },
+          { text: '"Fine. I\'ll deal with you."', go: 'r_deal_set',
+            flag: 'chose_two_fingers' },
+        ],
+      },
+      r_duchess: {
+        text: "Yes. And the Chaplain says I don't, and I trust the Chaplain to remember things accurately. If you want the truth — ask him. If you want a version that benefits the person you're talking to, ask either of us.",
+        options: [{ text: '[Leave.]', go: null }],
+      },
+
+      root_returning: {
+        text: "[He nods at you as you come in.]\n\nBack already? You make decisions fast.\n\nWhat's the trade?",
+        options: [
+          { text: '"How worried are you about the Duchess?"', go: 'r_worried' },
+          { text: '[Just here for the goods.]', go: null },
+        ],
+      },
+      r_worried: {
+        text: "[A pause. Then the grin again, slightly weaker.]\n\nProfessionally, not at all. Personally, every time I close my eyes.\n\nI hope you settle it before she does. Because she will, if you don't.",
+        options: [{ text: '[Nod.]', go: null }],
+      },
+
+      root_after_resolution: {
+        text: "[He's working at the same folding table — but now there's a crate stamped 'D' tucked discreetly behind him.]\n\nThe Duchess and I have an arrangement. I'm working it off properly. You did me a kindness, Captain.\n\nWhat can I do for you?",
+        options: [
+          { text: '"Just stopping in."', go: null },
+          { text: '"Thanks."', go: null },
+        ],
+      },
+      root_gone: {
+        text: "[The folding table is gone. So is the chair. So is Two-Fingers.]\n\n[A scrap of paper on the floor reads, in sloping handwriting: 'Sorry. Tell the Chaplain.']",
+        options: [{ text: '[Leave it.]', go: null }],
+      },
+    },
+  },
+
+  chaplain: {
+    id: 'chaplain',
+    name: 'The Chaplain',
+    title: 'No Denomination Specified',
+    portrait: 'chaplain',
+    greeting: "[An older man, perhaps fifty, in a small room with two chairs and a kettle.]\n\nSit, if you'd like. The kettle is on. It is almost always on.",
+    entry: [
+      { requireFlag: 'chaplain_mediated', node: 'root_after_mediation' },
+      { requireFlag: 'chaplain_trust', node: 'root_trusted' },
+      { requireMinVisits: 2, node: 'root_v2' },
+      { node: 'root' },
+    ],
+    tree: {
+      root: {
+        text: "[He pours, doesn't ask whether you want one. Hands it across.]\n\nI listen, mostly. People come here, talk for a little while, leave. They don't always come back. They don't always need to.\n\nWhat brings you to my chair?",
+        options: [
+          { text: '"What do you do here?"', go: 'r_do' },
+          { text: '"Why no denomination?"', go: 'r_denomination' },
+          { text: '[Sit. Drink the tea. Say nothing.]', go: 'r_silent' },
+        ],
+      },
+      r_do: {
+        text: "I keep records of what people choose to be. Not who they say they are — what they do, when they think no one is looking.\n\n[He takes a slow sip.]\n\nIt's a strange ministry. It seems to be needed.",
+        options: [
+          { text: '"You watch me, then?"', go: 'r_watch' },
+          { text: '[Leave.]', go: null },
+        ],
+      },
+      r_denomination: {
+        text: "Because the people who come here have already decided what they think the universe is for. Adding mine to the conversation would not help anyone.\n\nI listen. I notice. Occasionally I make tea.",
+        options: [
+          { text: '[Sit a while.]', go: 'r_silent' },
+          { text: '[Leave.]', go: null },
+        ],
+      },
+      r_silent: {
+        text: "[The tea is good. It is a weak honest tea, made with care. He does not fill the silence.]\n\n[After a while, he speaks.]\n\nYou listen well. Not many do.",
+        options: [
+          { text: '[Stand. Nod. Leave.]', go: null, flag: 'chaplain_trust',
+            flagLabel: '🤝 The Chaplain trusts you' },
+        ],
+      },
+      r_watch: {
+        text: "[A small, fond smile.]\n\nI watch the Sump. You happen to be in it.\n\nI know about the boy and his table. I know what version of the Duchess's story is true and which is comfortable. I know — though no one has asked me — what choices you have made off-station, because the universe is small and people talk.\n\nWhen you have time for it, I will tell you what I know. Until then: drink the tea.",
+        options: [
+          { text: '[Drink. Listen.]', go: 'r_silent' },
+          { text: '[Leave.]', go: null },
+        ],
+      },
+
+      root_v2: {
+        text: "[He nods as you come in. Pours.]\n\nBack again. Good.",
+        options: [
+          { text: '"Tell me about Two-Fingers and the Duchess."', go: 'r_truth' },
+          { text: '"Have you been watching?"', go: 'r_watching' },
+          { text: '[Sit. Drink. Be quiet.]', go: 'r_silent' },
+        ],
+      },
+      r_truth: {
+        text: "Fifteen years ago his father lost a shipment that wasn't his to lose. The boy's father paid back what he could, which was half. The other half, he asked the boy to take on, when the boy was ten years old.\n\nThe boy said no. He said no with the certainty children can manage. The father died unreconciled.\n\nThe Duchess remembers the half. She does not remember the conversation, because she did not have to live it.\n\n[A pause.]\n\nNeither version is quite the truth. The truth is messier.",
+        options: [
+          { text: '"Will you mediate?"', go: 'r_mediate' },
+          { text: '[Sit with it.]', go: null,
+            flag: 'chaplain_trust', flagLabel: '🤝 The Chaplain trusts you' },
+        ],
+      },
+      r_watching: {
+        text: "[A long, kind look.]\n\nYes.\n\n[He sets down the cup.]\n\nI think — for what it's worth — that you are doing better than you give yourself credit for. The universe has not been kind to you, and you have not been unkind in return.\n\nThat is unusual. I notice it.",
+        options: [
+          { text: '[Nod. Sit a moment.]', go: null,
+            flag: 'chaplain_trust', frontierDelta: 3,
+            flagLabel: '🤝 The Chaplain trusts you' },
+        ],
+      },
+      r_mediate: {
+        text: "Yes. If they will both sit. The Duchess has, in fifteen years, never once asked me. The boy has not, either. But if you bring it to them on my behalf — they will sit.\n\nGo. I will follow.",
+        options: [
+          { text: '[Go to the Duchess.]', go: null,
+            flag: 'chaplain_mediated', flagLabel: '🤝 Chaplain has agreed to mediate' },
+        ],
+      },
+
+      root_trusted: {
+        text: "[He nods. Pours.]\n\nThe kettle is always on.",
+        options: [
+          { text: '"Tell me about Two-Fingers and the Duchess."', go: 'r_truth' },
+          { text: '"Will you mediate?"', go: 'r_mediate' },
+          { text: '[Sit. Drink.]', go: null },
+        ],
+      },
+      root_after_mediation: {
+        text: "[He looks tired but not unhappy.]\n\nThe boy is still here. The Duchess is still angry. Neither of those is a small achievement.\n\nThank you, Captain.",
+        options: [{ text: '[Leave.]', go: null }],
       },
     },
   },
