@@ -29,7 +29,7 @@ export function GuidePanel({ entry, onDismiss }) {
         className="guide-panel"
         onClick={e => e.stopPropagation()}
         role="dialog"
-        aria-label="Guide entry"
+        aria-label="Compendium entry"
         style={{
           width: 'min(440px, 92vw)',
           background: '#050a05',
@@ -50,7 +50,10 @@ export function GuidePanel({ entry, onDismiss }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10, position: 'relative' }}>
           <div>
             <div style={{ fontSize: 9, letterSpacing: 3, color: '#40c060', marginBottom: 3 }}>
-              THE HITCHHIKER&apos;S GUIDE TO THE GALAXY
+              THE INDEPENDENT TRAVELLER&apos;S COMPENDIUM TO FRONTIER SPACE
+            </div>
+            <div style={{ fontSize: 9, color: '#207040', letterSpacing: 2, marginBottom: 4 }}>
+              FREE CARTOGRAPHERS&apos; ASSOCIATION
             </div>
             <div style={{ fontSize: 11, color: '#a0ffa0', letterSpacing: 1 }}>
               ENTRY: {entry.title}
@@ -58,7 +61,7 @@ export function GuidePanel({ entry, onDismiss }) {
           </div>
           <button
             onClick={onDismiss}
-            aria-label="Dismiss guide"
+            aria-label="Dismiss Compendium entry"
             style={{
               background: 'transparent',
               border: '1px solid #207040',
@@ -105,7 +108,7 @@ export function GuidePanel({ entry, onDismiss }) {
             position: 'relative',
           }}
         >
-          <span>DON&apos;T PANIC</span>
+          <span>DON&apos;T GET LOST.</span>
           <span style={{ color: '#205a30' }}>END OF ENTRY</span>
         </div>
       </div>
@@ -113,13 +116,13 @@ export function GuidePanel({ entry, onDismiss }) {
   )
 }
 
-// Small inline button that re-opens the guide panel from a location header.
+// Small inline button that re-opens the Compendium panel from a location header.
 export function GuideButton({ onClick }) {
   return (
     <button
       onClick={onClick}
-      title="Re-open Guide entry"
-      aria-label="Open Guide entry"
+      title="Re-open Compendium entry"
+      aria-label="Open Compendium entry"
       style={{
         background: '#0a1408',
         border: '1px solid #207040',
@@ -131,7 +134,7 @@ export function GuideButton({ onClick }) {
         letterSpacing: 1,
       }}
     >
-      📖 GUIDE
+      ▤ COMPENDIUM
     </button>
   )
 }

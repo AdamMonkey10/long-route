@@ -1801,8 +1801,14 @@ export const NPCS = {
         options: [
           { text: '"What back-routes?"', go: 'r_back_routes' },
           { text: '"Tell me about the system."', go: 'r_system' },
+          { text: '"You\'re with the Free Cartographers\' Association?"', go: 'r_compendium' },
           { text: '[Leave.]', go: null },
         ],
+      },
+      r_compendium: {
+        text: "[A small smile.]\n\nField contributor. The Association lets me work the sector independently in exchange for entries. I write more entries than they print. They print the ones that won't get them sued.\n\nThe Compendium is a useful cover. Nobody investigates a cartographer.\n\n[She gestures at the table.]\n\nThe charts that matter aren't in the Compendium. They're here. The Compendium is for the Combine's auditors. The Association understands the difference and is, in its quiet way, on our side.",
+        options: [{ text: '[Note it. Leave.]', go: null,
+          flag: 'compendium_known', flagLabel: '📑 Free Cartographers\' Association — quietly on our side' }],
       },
       r_system: {
         text: "Coordinates redacted from official charts. Last reported sighting twenty years ago by a salvager who has since refused to discuss it. I have a bracket of where the system *should* be — if it is anywhere.\n\nIf you happen to acquire those coordinates from someone other than me, you would be doing both of us a favour by going to look.",
