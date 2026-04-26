@@ -681,6 +681,7 @@ export const NPCS = {
     tree: {
       root: {
         text: "New Geneva exists because everyone needs somewhere to pretend to cooperate. I've been facilitating this pretense for twenty-three years.\n\nWhat brings an independent trader to the diplomatic quarter?",
+        flagsOnEnter: ['flyte_met'],
         options: [
           { text: "I'm investigating the Frontier Wars.", go: 'wars' },
           { text: "What's the trade situation?", go: 'trade' },
@@ -1619,6 +1620,359 @@ export const NPCS = {
       v3_more: {
         text: "There's a cartographer at Meridian who buys system locations like that one. She's been looking for it for years. If you don't go yourself, sell it to her. She'll know what to do.\n\nThat's all. I'm out of stories.",
         options: [{ text: "Understood.", go: null }],
+      },
+    },
+  },
+
+  yusuf: {
+    id: 'yusuf',
+    name: 'Yusuf',
+    title: "Otto's Brother",
+    portrait: 'yusuf',
+    greeting: "[A quieter man behind the same bar. Same drinks. The room sounds different at this hour.]\n\nOtto's gone home. I take the night. What can I get you?",
+    entry: [
+      { requireMinVisits: 3, node: 'root_v3' },
+      { requireMinVisits: 2, node: 'root_v2' },
+      { node: 'root' },
+    ],
+    tree: {
+      root: {
+        text: "[He pours without asking. The glass is the same as Otto's. The pour is fractionally smaller and fractionally more careful.]\n\nMost people think Otto's the brother who notices things. Otto thinks so too. It's a useful arrangement.",
+        options: [
+          { text: '"What do you notice that he doesn\'t?"', go: 'r_notice' },
+          { text: '"How long have you been doing this?"', go: 'r_long' },
+          { text: '[Drink. Listen.]', go: null },
+        ],
+      },
+      r_notice: {
+        text: "Patterns. The same booth, the same two people, same time every fifteen days. Three traders who never sit together, then one day they all do, and the next morning a particular commodity is up four percent.\n\nI don't volunteer it. People don't ask the night barkeep.\n\nThe people who do ask — I usually trade with them.",
+        options: [
+          { text: '"Trade what for what?"', go: 'r_trade' },
+          { text: '[Take it in.]', go: null },
+        ],
+      },
+      r_trade: {
+        text: "Information. I keep records — patterns I've noticed, things I've overheard, the rough shape of who-meets-whom-and-why. Most of it is uninteresting. Some of it isn't.\n\nThere's a man called Silas who runs a book in the side room. He buys what I sell. If you're interested in either of us, ask. He's careful. I'm patient.",
+        options: [
+          { text: '"Tell me about Silas."', go: 'r_silas' },
+          { text: '[Note it. Drink.]', go: null },
+        ],
+      },
+      r_silas: {
+        text: "Bookmaker. He'll take a bet on anything quantifiable, including some things you wouldn't think were quantifiable until he quantifies them.\n\nHe's in the side room when he's working. He's working most nights. Tell him I sent you, you'll get a fair first hand.",
+        options: [
+          { text: '[Ask him.]', go: null,
+            flag: 'silas_intro', flagLabel: '🎲 Silas — bookmaker, side room' },
+        ],
+      },
+      r_long: {
+        text: "Fifteen years. Otto sixteen — he'll never let me forget the year.\n\n[A small smile.]\n\nWe came here together looking for work. It became this. It's a fair life. I notice things.",
+        options: [
+          { text: '"What things?"', go: 'r_notice' },
+          { text: '[Leave him to it.]', go: null },
+        ],
+      },
+
+      root_v2: {
+        text: "[A nod as you sit. The pour is faster.]\n\nGood to see you. What can I do?",
+        options: [
+          { text: '"Are there charts in this place that aren\'t on the manifest?"', go: 'r_charts' },
+          { text: '"Anything specific you\'ve noticed about my arrival?"', go: 'r_arrival' },
+          { text: '"How\'s Otto?"', go: 'r_otto' },
+          { text: '[Drink.]', go: null },
+        ],
+      },
+      r_charts: {
+        text: "[A long, considering look.]\n\nThere's a Chart Room three doors down. The proprietor doesn't take walk-ins. She takes referrals.\n\nI'm referring you. Don't make me regret it.",
+        options: [
+          { text: '"I won\'t."', go: null,
+            flag: 'cartographer_intro', flagLabel: '🗺 The Chart Room — by referral' },
+        ],
+      },
+      r_arrival: {
+        text: "[Quietly.]\n\nA Combine agent walked through twice in the last week — same agent, both times, in different uniforms. They asked the day staff about the Persistent Delusion. They didn't ask me.\n\nI noticed. That's all. Be careful.",
+        options: [{ text: '[Nod. Take it in.]', go: null }],
+      },
+      r_otto: {
+        text: "Loud. Cheerful. Convinced he is the more observant brother. Two of those things are true.\n\n[A flicker of a smile.]\n\nWhat would you like to drink?",
+        options: [{ text: '[Whatever is honest.]', go: null }],
+      },
+
+      root_v3: {
+        text: "[He's already pouring before you sit.]\n\nThird night this rotation. You're a regular now. By Otto's standards, that means you have a tab. By mine, it means I'll tell you a true thing if you ask for one.",
+        options: [
+          { text: '"What do you know about Edda Vance?"', go: 'r_edda' },
+          { text: '"Anything else I should know?"', go: 'r_else' },
+          { text: '[Drink. Don\'t push.]', go: null, frontierDelta: 2 },
+        ],
+      },
+      r_edda: {
+        text: "[He doesn't pretend it's a small question.]\n\nShe came through twice. The first time she was new and asking. The second time she was certain and leaving. Both times she came in at eleven and left at one.\n\nThe second time, the booth in the corner had two suits in it pretending to be patrons. They followed her out. She lost them by the courier shuttle.\n\nShe was good. They were better-funded.",
+        options: [{ text: '[Drink. Listen.]', go: null }],
+      },
+      r_else: {
+        text: "[A slow shrug.]\n\nThe sector is quietly nervous. Independent traders are checking their flags more often. Combine paperwork has gone up twelve percent in the last six months — I count, because it crosses my bar in the form of complaints.\n\nWhatever's about to happen is closer than it was last year.",
+        options: [{ text: '[Take it in.]', go: null }],
+      },
+    },
+  },
+
+  silas: {
+    id: 'silas',
+    name: 'Silas',
+    title: 'Bookmaker',
+    portrait: 'silas',
+    greeting: "[A small office, cards spread on a green-felt table that has seen most of human pattern recognition unfold across it.]\n\nYusuf sent you. Of course. Sit down. What's your shape?",
+    entry: [
+      { node: 'root' },
+    ],
+    tree: {
+      root: {
+        text: "I take bets on most things. Trade prices, ship arrivals, the next Combine inspection schedule, whether a particular face will reappear at Yusuf's bar within seven days.\n\nThe books are mine. The records are also mine. Surprisingly, the latter are more valuable than the former.",
+        options: [
+          { text: '"What are the odds I survive what I\'m doing?"', go: 'r_odds' },
+          { text: '"Am I being tracked?"', go: 'r_tracked' },
+          { text: '"What are the odds the Combine\'s lying about something?"', go: 'r_combine' },
+          { text: '"Why is your record-keeping more valuable than your book?"', go: 'r_records' },
+          { text: '[Leave.]', go: null },
+        ],
+      },
+      r_odds: {
+        text: "[He looks at you for a long moment, calculating.]\n\nWith what I currently know about you — twelve to one against. With what you might tell me — better. Possibly considerably better.\n\nThe odds aren't a prediction. They're a reflection of how much I know. Talk to me, and the odds improve. Don't, and they don't.",
+        options: [
+          { text: '"Maybe later."', go: null },
+        ],
+      },
+      r_tracked: {
+        text: "[He flips to a particular page in a small notebook.]\n\nYes. By Combine Executive. Standing watch since you entered the sector. Renewal weekly.\n\nEvery time you dock at a Combine system, a flag goes up. Every time you leave, a flag drops. They're not stopping you. They want to know where you go. This costs them attention they could be spending elsewhere, which suggests they think you're worth that attention.",
+        options: [
+          { text: '"How do you know?"', go: 'r_records' },
+          { text: '"What do I owe you?"', go: 'r_owe' },
+        ],
+      },
+      r_combine: {
+        text: "[A grin, slow and entirely without surprise.]\n\nSix to one. Against.\n\n[He doesn't elaborate.]",
+        options: [
+          { text: '"Those are terrible odds."', go: 'r_combine_terrible' },
+          { text: '"Six to one against what, exactly?"', go: 'r_combine_what' },
+        ],
+      },
+      r_combine_terrible: {
+        text: "Yes. But they're accurate.\n\n[He turns the page in his book.]",
+        options: [{ text: '[Leave.]', go: null }],
+      },
+      r_combine_what: {
+        text: "Against the Combine telling the truth about any particular thing. Adjustable depending on the question, but the baseline is six to one. I update the baseline annually. It hasn't moved in eleven years.",
+        options: [{ text: '[Leave with that.]', go: null }],
+      },
+      r_records: {
+        text: "Every bet ever placed in this office is recorded. Bets are people telling me what they think they know. Aggregate fifteen years of those, and you have, accidentally, the most accurate intelligence model in the sector.\n\nIt is a side effect. The book makes me a living. The records would, if I sold them, make me a target.\n\nI don't sell them.",
+        options: [
+          { text: '"What do you do with them?"', go: 'r_what_do' },
+          { text: '"Am I being tracked?"', go: 'r_tracked' },
+        ],
+      },
+      r_what_do: {
+        text: "I notice things, mostly. I tell Yusuf when something interesting moves. He tells me when something interesting walks into his bar.\n\n[A glance.]\n\nIf you become interesting enough, perhaps I'll write a chapter on you.",
+        options: [{ text: '[Leave.]', go: null }],
+      },
+      r_owe: {
+        text: "Nothing. The first hand is free. Yusuf sent you, which means I owe you a courtesy. The next hand: information for information.\n\nCome back when you've got something to trade.",
+        options: [{ text: '[Leave.]', go: null }],
+      },
+    },
+  },
+
+  cartographer: {
+    id: 'cartographer',
+    name: 'The Cartographer',
+    title: 'Chart Room',
+    portrait: 'cartographer',
+    greeting: "[A woman bent over a table covered in charts, some rolled, some flat. She does not look up immediately.]\n\nYou're here because someone you trust referred you. Sit. Tell me what you have or what you want.",
+    entry: [
+      { requireFlag: 'cartographer_charts', node: 'root_done' },
+      { requireFlag: 'installation_confirmed', node: 'root_returned' },
+      { requireFlag: 'rennick_coords', node: 'root_with_coords' },
+      { node: 'root' },
+    ],
+    tree: {
+      root: {
+        text: "I deal in charts. Specifically: charts of locations the Combine prefers nobody chart. I don't sell to walk-ins; I trade, and only with people who have something I want.\n\nMy current want is small and specific: confirmation that a particular system exists. The Combine's records list it as a 'data entry error.' My instruments suggest otherwise. I cannot leave this room to verify.\n\nIf you can verify it, the back-routes are yours.",
+        options: [
+          { text: '"What back-routes?"', go: 'r_back_routes' },
+          { text: '"Tell me about the system."', go: 'r_system' },
+          { text: '[Leave.]', go: null },
+        ],
+      },
+      r_system: {
+        text: "Coordinates redacted from official charts. Last reported sighting twenty years ago by a salvager who has since refused to discuss it. I have a bracket of where the system *should* be — if it is anywhere.\n\nIf you happen to acquire those coordinates from someone other than me, you would be doing both of us a favour by going to look.",
+        options: [
+          { text: '[Note it. Leave.]', go: null },
+        ],
+      },
+      r_back_routes: {
+        text: "Unlisted jump corridors. Twenty percent off published fuel cost on every route, permanently. The Combine's official routes are designed for surveillance and inefficiency. Mine are designed for fuel.\n\nYours when you bring me confirmation.",
+        options: [
+          { text: '[Note it.]', go: null },
+        ],
+      },
+
+      root_with_coords: {
+        text: "[She looks up, sharp.]\n\nYou have something for me. A set of coordinates. Don't tell me where you got them; I would rather guess.\n\nWhat I need from you isn't the coordinates. I need someone who has *been* there. Will you go?",
+        options: [
+          { text: '[Take the coordinates and go.]', go: 'r_journey' },
+          { text: '"Not yet. I\'ll think about it."', go: null },
+        ],
+      },
+      r_journey: {
+        text: "[You leave Meridian on an unscheduled jump. The coordinates lead, after a careful approach, to a system not on any official chart.\n\nThere is a station there. Combine military insignia. Lights on. Running dark — no transponder, no comms.\n\nYou observe from a distance that is, you decide, far enough. You log the configuration of its emissions. You leave without being seen, or at least without being interrupted.\n\nYou return to Meridian.]",
+        flagsOnEnter: ['installation_confirmed'],
+        options: [
+          { text: '"It exists."', go: 'r_returned_msg',
+            flag: 'installation_confirmed_msg', flagLabel: '✅ Uncharted Combine station: confirmed' },
+        ],
+      },
+
+      root_returned: {
+        text: "[She listens to your account without interrupting. When you finish, she folds your description into a pocket of her coat.]\n\nThank you. That is — a great deal more than I expected to receive in my lifetime.\n\nThe back-routes are yours. The chart is on the rear wall; learn it before you leave the room. I do not give copies.",
+        options: [
+          { text: '[Study the chart. Leave.]', go: 'r_done' },
+        ],
+      },
+      r_returned_msg: {
+        text: "[She hears you out, completely still until you finish.]\n\nThank you, Captain. You'll want to come back when I have your reward ready — I need to confirm the configuration you described, which will take me a day. Come back tomorrow.",
+        options: [
+          { text: '[Nod. Leave.]', go: null },
+        ],
+      },
+      r_done: {
+        text: "[The chart is intricate. You read it carefully. It maps eleven systems, three of which are not on any Combine reference. Two routes between them save twenty percent fuel on average. You can keep these in your head.]",
+        options: [
+          { text: '[Leave with the routes memorised.]', go: null,
+            flag: 'cartographer_charts', frontierDelta: 5,
+            flagLabel: '🗺 Back-routes acquired — fuel costs reduced' },
+        ],
+      },
+      root_done: {
+        text: "[She nods at you with the brisk recognition of one professional acknowledging another.]\n\nThe routes work. You've been using them. Good.\n\nIs there anything else?",
+        options: [
+          { text: '[Just stopping in.]', go: null },
+        ],
+      },
+    },
+  },
+
+  hadley: {
+    id: 'hadley',
+    name: 'Hadley',
+    title: 'Archivist, New Geneva',
+    portrait: 'hadley',
+    greeting: "[A small reading room. Soft light. A woman in her sixties looking up from a sheaf of papers with an expression of cautious interest.]\n\nFlyte vouched for you. That is, I'll note, sufficient. What can I help you find?",
+    entry: [
+      { requireFlag: 'hadley_list', node: 'root_done' },
+      { node: 'root' },
+    ],
+    tree: {
+      root: {
+        text: "I am New Geneva's archivist. I have read every diplomatic communication, every official statement, every treaty negotiated in this sector for the last forty years.\n\nI am not, technically, supposed to share what I notice. I have not, technically, been asked to.",
+        options: [
+          { text: '"Have you noticed inconsistencies in the Combine\'s account of the Frontier Wars?"', go: 'r_inconsistencies' },
+          { text: '"Why do you stay, if the work is so quiet?"', go: 'r_stay' },
+          { text: '[Leave.]', go: null },
+        ],
+      },
+      r_inconsistencies: {
+        text: "[She closes the folder she was reading. Turns to face you directly.]\n\nSeventeen.\n\nSeventeen specific inconsistencies between the Combine's official account of the Frontier Wars and the diplomatic record. Some are dates that don't reconcile. Some are signatures on documents that, by other documents, the signatory could not have been present to sign. Some are statements made publicly that contradict, very precisely, statements made at closed sessions four months earlier.\n\nNone of them, in isolation, would prove anything. Together, they describe a story that the public account is concealing.",
+        options: [
+          { text: '"Will you give me the list?"', go: 'r_list' },
+          { text: '"Why haven\'t you published?"', go: 'r_why_not' },
+        ],
+      },
+      r_list: {
+        text: "[She slides a small data wafer across the table.]\n\nAll seventeen, with citation. The citations matter — without them, it's a list of allegations. With them, it's an indictment.\n\nDo something useful with it. I have been waiting forty years for someone to ask.",
+        flagsOnEnter: ['hadley_list'],
+        options: [
+          { text: '[Take it. Promise to.]', go: null,
+            frontierDelta: 8, flag: 'hadley_list_msg', flagLabel: '📜 Hadley\'s 17 inconsistencies' },
+        ],
+      },
+      r_why_not: {
+        text: "Because no one asked. Diplomatic archivists do not, generally, publish. We provide context to the people who request it. Nobody requested context on this until you walked in.\n\n[A small, dry smile.]\n\nForty years is a long time to be patient. I am very patient.",
+        options: [
+          { text: '"Will you give me the list?"', go: 'r_list' },
+        ],
+      },
+      r_stay: {
+        text: "Because the records are here, and someone has to know what they say, and the people who could replace me would be hand-picked for not noticing what I notice.\n\nIt is not patience. It is stubbornness, dressed for work.",
+        options: [{ text: '[Nod. Leave.]', go: null }],
+      },
+      root_done: {
+        text: "[She nods, briskly.]\n\nI hear from Barker that the work continues. Carry on, Captain.",
+        options: [{ text: '[Nod. Leave.]', go: null }],
+      },
+    },
+  },
+
+  brennan: {
+    id: 'brennan',
+    name: 'Consul Brennan',
+    title: 'Frontier Faction Mission',
+    portrait: 'brennan',
+    greeting: "[A man behind a desk in a small embassy. He is wearing a tie that, on closer inspection, is the formal pattern of a faction that lost the war thirteen years ago.]\n\nWelcome to the Frontier Mission. I am Consul Brennan. Please sit.",
+    entry: [
+      { requireFlag: 'brennan_testimony', node: 'root_done' },
+      { requireMinFrontier: 50, node: 'root_open' },
+      { node: 'root' },
+    ],
+    tree: {
+      root: {
+        text: "I have been here for six years, technically negotiating reparations on behalf of the Frontier Faction.\n\n[He folds his hands. The fold is precise.]\n\nIn six years, no reparations have been paid. No timetable for reparations has been established. No new framework for negotiating reparations has been agreed.\n\nThis is, formally, a successful posting.",
+        options: [
+          { text: '"Why do you keep doing it?"', go: 'r_why' },
+          { text: '"What would change things?"', go: 'r_change' },
+          { text: '[Leave.]', go: null },
+        ],
+      },
+      r_why: {
+        text: "Because the alternative is for there to be no Frontier Faction representative at New Geneva. Six years of polite obstruction is preferable to six years of administrative absence, on the grounds that I am still in the room.\n\nThis is the consolation. It is not large.",
+        options: [
+          { text: '"What would change things?"', go: 'r_change' },
+        ],
+      },
+      r_change: {
+        text: "Leverage. Diplomacy without leverage is asking politely; six years of asking politely has made this clear.\n\nThe Combine has assumed for thirteen years that the Frontier account of the wars cannot be supported. If that assumption is shown to be wrong — publicly, with documentation — leverage exists. Negotiations resume. Reparations become a real category again.\n\nWithout that, this office is a courtesy. Diplomacy as a kind of museum.",
+        options: [
+          { text: '"I\'m working on the documentation."', go: 'r_working' },
+          { text: '[Leave with that.]', go: null },
+        ],
+      },
+      r_working: {
+        text: "[A long, careful look.]\n\nThen you have my full and unofficial cooperation. I cannot give you what I have without a reason to believe it will reach print.\n\nIf you can convince me that the publication is real — that it will land where it cannot be buried — I will give you my testimony. The Frontier records you don't have. The names of the people I met during the war who never made it home.",
+        options: [
+          { text: '"Barker Ness will publish across thirty-two outlets. Sable will route it. The story will hold."', go: 'r_convinced',
+            requireFlags: ['barker_outlets_confirmed', 'sable_route_confirmed'] },
+          { text: '"Soon. I\'m gathering the pieces."', go: null },
+        ],
+      },
+      r_convinced: {
+        text: "[He stands. Crosses to a small safe. Opens it. Takes out a thin folder. Sets it on the desk.]\n\nMy testimony. Six years' worth of names, dates, accounts. A list of seventy-three people the Frontier lost to actions the Combine officially never authorised.\n\n[He sits.]\n\nWhen Barker is ready, I am ready. Thank you for coming.",
+        flagsOnEnter: ['brennan_testimony'],
+        options: [
+          { text: '[Nod. Leave with the folder.]', go: null,
+            frontierDelta: 12, flag: 'brennan_testimony_msg', flagLabel: '⚖ Brennan\'s testimony — 73 names' },
+        ],
+      },
+
+      root_open: {
+        text: "[He nods, more openly than the first time.]\n\nWhat you've been doing has reached me, in the limited ways things reach this office. I'm grateful. Sit.",
+        options: [
+          { text: '"Will you give me your testimony?"', go: 'r_working' },
+          { text: '"Just stopping in."', go: null },
+        ],
+      },
+      root_done: {
+        text: "[He nods, tightly.]\n\nWhen Barker calls.",
+        options: [{ text: '[Leave.]', go: null }],
       },
     },
   },

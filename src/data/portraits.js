@@ -41,4 +41,9 @@ export const PORTRAIT_DATA = {
   cass: { bg: '#0a0a0a', face: '#a07050', hair: '#2a1a0a', eye: '#80a0a0', exp: 'sharp' },
   maren: { bg: '#1a1408', face: '#c0a070', hair: '#a0a0a0', eye: '#7090c0', exp: 'knowing' },
   the_doctor: { bg: '#0a0c0c', face: '#a08070', hair: '#404040', eye: '#80a090', exp: 'tired' },
+  yusuf: { bg: '#1a0a05', face: '#a06040', hair: '#1a0a05', eye: '#80a0c0', exp: 'knowing' },
+  silas: { bg: '#1a1408', face: '#c08050', hair: '#3a2010', eye: '#c0a040', exp: 'amused' },
+  cartographer: { bg: '#0a1020', face: '#b09080', hair: '#7a6050', eye: '#60c080', exp: 'sharp' },
+  hadley: { bg: '#0a1020', face: '#c0b090', hair: '#a0a0a0', eye: '#7090c0', exp: 'sharp' },
+  brennan: { bg: '#0a1010', face: '#a08060', hair: '#3a3030', eye: '#80a060', exp: 'gaunt' },
 }

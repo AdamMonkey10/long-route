@@ -433,6 +433,10 @@ export function reducer(state, action) {
       if (opt.inesTrustDelta) {
         ns = { ...ns, inesTrust: (ns.inesTrust || 0) + opt.inesTrustDelta }
       }
+      // Cartographer's back-routes apply a permanent +20% fuel reduction.
+      if (opt.flag === 'cartographer_charts') {
+        ns = { ...ns, fuelMod: (ns.fuelMod || 0) + 0.2 }
+      }
       if (opt.giveItem === 'data_core') {
         ns.flags = { ...ns.flags, has_data_core: true }
         ns.gameLog = prepend(
