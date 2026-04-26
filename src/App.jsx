@@ -13,6 +13,7 @@ import { EventScreen } from './components/EventScreen.jsx'
 import { LogScreen } from './components/LogScreen.jsx'
 import { LedgerScreen } from './components/LedgerScreen.jsx'
 import { SettingsScreen } from './components/SettingsScreen.jsx'
+import { ShipLogScreen } from './components/ShipLogScreen.jsx'
 import { Notification } from './components/Notification.jsx'
 
 function init() {
@@ -118,6 +119,9 @@ export default function App() {
                 onNewGame={handleNewGame}
                 savedAt={savedAt}
               />
+            )}
+            {state.view === 'shiplog' && (
+              <ShipLogScreen state={state} dispatch={wrappedDispatch} />
             )}
           </div>
         </>

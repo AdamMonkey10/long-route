@@ -72,6 +72,22 @@ export function reducer(state, action) {
       return { ...state, view: 'ledger' }
     case 'GOTO_SETTINGS':
       return { ...state, view: 'settings' }
+    case 'GOTO_SHIP_LOG':
+      return { ...state, view: 'shiplog' }
+
+    case 'SEARCH_CABIN': {
+      if (state.flags?.compartment_opened) return state
+      const flags = {
+        ...state.flags,
+        compartment_opened: true,
+        frontier_scrip: true,
+      }
+      const log = prepend(
+        "🪙 Hidden compartment opened. Found a photograph, a folded note, and 30 credits in old Frontier scrip.",
+        state.gameLog,
+      )
+      return { ...state, flags, credits: state.credits + 30, gameLog: log }
+    }
 
     case 'START_TRAVEL': {
       const sys = SYSTEMS[action.to]

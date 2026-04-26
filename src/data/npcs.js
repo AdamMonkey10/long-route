@@ -2331,7 +2331,32 @@ export const NPCS = {
         options: [
           { text: '"Tell me about Two-Fingers and the Duchess."', go: 'r_truth' },
           { text: '"Have you been watching?"', go: 'r_watching' },
+          { text: '[Hand over the old Frontier scrip.]', go: 'r_scrip',
+            requireFlag: 'frontier_scrip',
+            requireNotFlag: 'compartment_resolved' },
           { text: '[Sit. Drink. Be quiet.]', go: 'r_silent' },
+        ],
+      },
+      r_scrip: {
+        text: "[He takes the bundle. Looks at it for a long, careful moment. Then sets it on the table.]\n\nWhere did you find this?\n\n[He doesn't wait for the answer.]\n\nNo — that's the wrong question. The right one is who you are. Edda left this for someone like you. The note suggested it would find its way to me eventually.\n\nIt has.",
+        flagsOnEnter: ['compartment_resolved'],
+        options: [
+          { text: '"What does it mean?"', go: 'r_scrip_mean' },
+          { text: '[Wait.]', go: 'r_scrip_mean' },
+        ],
+      },
+      r_scrip_mean: {
+        text: "Old Frontier scrip is unspendable. The currency was withdrawn thirteen years ago. What it is now, in practical terms, is a token. A way of saying: I know who I am, I know who you are, I trust you with the rest.\n\nEdda was Frontier-born. She never said so. The scrip was the way she would say so without saying so.\n\n[He folds the bundle into his coat.]\n\nThank you for bringing it. There's a little more I can tell you, now that I know who Edda thought you might be.",
+        options: [
+          { text: '[Ask him.]', go: 'r_scrip_more',
+            frontierDelta: 5, flag: 'chaplain_scrip_msg',
+            flagLabel: '🎟 Chaplain has the scrip — Frontier-born' },
+        ],
+      },
+      r_scrip_more: {
+        text: "Edda came to me twice. The first time was the conversation about tea. The second was the night before she left — she sat for forty minutes without speaking, drank two cups, set the empty one down, and said: 'If anyone comes asking, tell them what they need. They'll know what they need by what they bring.'\n\nYou brought the scrip. You needed to know that she was one of us. She was. She is, if she's still alive. I think she is.\n\n[A small bow of the head.]\n\nGo well, Captain.",
+        options: [
+          { text: '[Bow back. Leave.]', go: null },
         ],
       },
       r_truth: {

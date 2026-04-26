@@ -336,7 +336,7 @@ export function SettingsScreen({ state, dispatch, onNewGame, savedAt }) {
       </div>
 
       <div style={{ color: 'var(--text-ghost)', fontSize: 10, textAlign: 'center', marginTop: 14 }}>
-        v3.5 · The Guide · {Object.keys(SYSTEMS).length} systems · DON&apos;T PANIC
+        v3.6 · Ship Log · {Object.keys(SYSTEMS).length} systems · DON&apos;T PANIC
       </div>
     </div>
   )

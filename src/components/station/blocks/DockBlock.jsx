@@ -16,6 +16,28 @@ export function DockBlock({ state, dispatch, sys, services }) {
     <>
       {showRepair && <ShipComputer state={state} />}
       {showRepair && (
+        <button
+          onClick={() => {
+            SFX.click()
+            dispatch({ type: 'GOTO_SHIP_LOG' })
+          }}
+          style={{
+            width: '100%',
+            padding: '8px 10px',
+            background: 'var(--bg-panel-hi)',
+            border: '1px solid var(--border)',
+            color: 'var(--accent)',
+            borderRadius: 6,
+            cursor: 'pointer',
+            fontSize: 11,
+            letterSpacing: 2,
+            marginBottom: 10,
+          }}
+        >
+          ▤ SHIP LOG
+        </button>
+      )}
+      {showRepair && (
         <div
           style={{
             background: 'var(--bg-panel)',
