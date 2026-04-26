@@ -75,12 +75,14 @@ export function reducer(state, action) {
 
     case 'START_TRAVEL': {
       const sys = SYSTEMS[action.to]
-      const cost = travelCost(action.to, state.engine)
+      const cost = travelCost(action.to, state.engine, state.fuelMod)
       if (state.credits < cost) {
         return { ...state, notification: `Not enough credits for fuel (need ${cost})` }
       }
       const forced = forcedEnemy(state, sys)
-      const effectiveChance = sys.combatChance * combatChanceMultiplier(state, sys)
+      const standingMult = combatChanceMultiplier(state, sys)
+      const modMult = Math.max(0, 1 + (state.combatChanceMod || 0))
+      const effectiveChance = sys.combatChance * standingMult * modMult
       const combatRoll = Math.random() * 100
       let event = null
       let combat = null
@@ -320,14 +322,28 @@ export function reducer(state, action) {
     case 'BUY_UPGRADE': {
       const upg = UPGRADES.find(u => u.id === action.id)
       if (!upg) return state
-      if (state.credits < upg.cost) return { ...state, notification: 'Not enough credits.' }
-      if (upg.req && !state.upgrades.includes(upg.req)) {
-        return { ...state, notification: 'Prerequisite upgrade required.' }
-      }
       if (state.upgrades.includes(upg.id)) {
         return { ...state, notification: 'Already installed.' }
       }
-      let ns = { ...state, credits: state.credits - upg.cost, upgrades: [...state.upgrades, upg.id] }
+      if (upg.req && !state.upgrades.includes(upg.req)) {
+        return { ...state, notification: 'Prerequisite upgrade required.' }
+      }
+
+      // Pay in components (cass mods) or credits (everything else).
+      let ns = { ...state, upgrades: [...state.upgrades, upg.id] }
+      if (upg.componentCost) {
+        const have = state.cargo.find(c => c.id === 'components')
+        if (!have || have.qty < upg.componentCost) {
+          return { ...state, notification: `Need ${upg.componentCost} components.` }
+        }
+        ns.cargo = state.cargo
+          .map(c => c.id === 'components' ? { ...c, qty: c.qty - upg.componentCost } : c)
+          .filter(c => c.qty > 0)
+      } else {
+        if (state.credits < upg.cost) return { ...state, notification: 'Not enough credits.' }
+        ns.credits = state.credits - upg.cost
+      }
+
       if (upg.effect === 'cargo') ns = { ...ns, cargoMax: ns.cargoMax + upg.value }
       else if (upg.effect === 'engine') ns = { ...ns, engine: ns.engine + upg.value }
       else if (upg.effect === 'weapons') ns = { ...ns, weapons: ns.weapons + upg.value }
@@ -339,6 +355,17 @@ export function reducer(state, action) {
           hull: Math.min(ns.hull + upg.value, ns.maxHull + upg.value),
         }
       }
+      else if (upg.effect === 'combat_chance') {
+        ns = { ...ns, combatChanceMod: (ns.combatChanceMod || 0) + upg.value }
+      }
+      else if (upg.effect === 'fuel_mod') {
+        ns = { ...ns, fuelMod: (ns.fuelMod || 0) + upg.value }
+      }
+      else if (upg.effect === 'hidden_cargo') {
+        ns = { ...ns, cargoMax: ns.cargoMax + upg.value, hiddenCompartment: true }
+      }
+      // 'scanner' has no state effect; the upgrades list itself is the gate.
+
       const log = prepend(`Installed: ${upg.name}.`, state.gameLog)
       return { ...ns, gameLog: log }
     }

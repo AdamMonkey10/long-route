@@ -18,10 +18,11 @@ export function generateMarket(systemId) {
   return market
 }
 
-export function travelCost(systemId, engineLevel) {
+export function travelCost(systemId, engineLevel, fuelMod = 0) {
   const base = SYSTEMS[systemId].fuelCost
   const mult = engineLevel === 0 ? 1 : engineLevel === 1 ? 0.75 : 0.5
-  return Math.floor(base * mult)
+  const stripped = Math.max(0, 1 - (fuelMod || 0))
+  return Math.floor(base * mult * stripped)
 }
 
 export function cargoUsed(cargo) {

@@ -38,4 +38,7 @@ export const PORTRAIT_DATA = {
   petra: { bg: '#0a1218', face: '#a08070', hair: '#3a2a1a', eye: '#80a0a0', exp: 'sharp' },
   two_fingers: { bg: '#180808', face: '#806040', hair: '#1a0808', eye: '#c08040', exp: 'amused' },
   chaplain: { bg: '#0a0a0a', face: '#806050', hair: '#3a3a3a', eye: '#a0a090', exp: 'knowing' },
+  cass: { bg: '#0a0a0a', face: '#a07050', hair: '#2a1a0a', eye: '#80a0a0', exp: 'sharp' },
+  maren: { bg: '#1a1408', face: '#c0a070', hair: '#a0a0a0', eye: '#7090c0', exp: 'knowing' },
+  the_doctor: { bg: '#0a0c0c', face: '#a08070', hair: '#404040', eye: '#80a090', exp: 'tired' },
 }

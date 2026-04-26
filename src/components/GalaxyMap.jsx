@@ -41,7 +41,7 @@ export function GalaxyMap({ state, dispatch }) {
     if (!SYSTEMS[cur].connections.includes(id)) return false
     const t = SYSTEMS[id]
     if (t.locked && !canUnlockSystem(state, t)) return false
-    return state.credits >= travelCost(id, state.engine)
+    return state.credits >= travelCost(id, state.engine, state.fuelMod)
   }
 
   const W2 = 460
@@ -107,7 +107,7 @@ export function GalaxyMap({ state, dispatch }) {
             const ul = canUnlockSystem(state, s)
             const hov = hovered === s.id
             const col = isCur ? '#4aaad0' : cg ? TIER_COLOR[s.tier] || '#606060' : '#1a2a3a'
-            const cost = s.id !== cur ? travelCost(s.id, state.engine) : 0
+            const cost = s.id !== cur ? travelCost(s.id, state.engine, state.fuelMod) : 0
             const r = isCur ? 8 : s.locked && !ul ? 4 : 5
             return (
               <g
@@ -308,7 +308,7 @@ export function GalaxyMap({ state, dispatch }) {
                   >
                     {s.name}{' '}
                     <span style={{ color: '#3a5a70' }}>
-                      {travelCost(id, state.engine)}cr
+                      {travelCost(id, state.engine, state.fuelMod)}cr
                     </span>
                   </button>
                 )

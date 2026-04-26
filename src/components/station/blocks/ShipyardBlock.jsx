@@ -1,7 +1,15 @@
 import { UPGRADES } from '../../../data/upgrades.js'
 import { SFX } from '../../../game/sfx.js'
+import { cargoUsed } from '../../../game/utils.js'
 
-export function ShipyardBlock({ state, dispatch }) {
+export function ShipyardBlock({ state, dispatch, loc }) {
+  // Filter: an upgrade with availableAt is only purchasable when the named
+  // NPC is in this location. Default upgrades show in any shipyard.
+  const presentNpcs = new Set(loc?.npcs || [])
+  const visible = UPGRADES.filter(u => !u.availableAt || presentNpcs.has(u.availableAt))
+  const componentsHeld = state.cargo.find(c => c.id === 'components')?.qty || 0
+  const showCassMods = visible.some(u => u.componentCost)
+
   return (
     <div>
       <div
@@ -12,12 +20,28 @@ export function ShipyardBlock({ state, dispatch }) {
           marginBottom: 10,
         }}
       >
-        SHIPYARD CATALOGUE
+        {showCassMods ? 'OFF-BOOKS MODIFICATIONS' : 'SHIPYARD CATALOGUE'}
       </div>
-      {UPGRADES.map(upg => {
+      {showCassMods && (
+        <div
+          style={{
+            color: 'var(--text-dim)',
+            fontSize: 11,
+            marginBottom: 10,
+            lineHeight: 1.5,
+          }}
+        >
+          Paid in components, not credits. You hold{' '}
+          <span style={{ color: '#5090d0' }}>{componentsHeld}</span> components.
+        </div>
+      )}
+      {visible.map(upg => {
         const owned = state.upgrades.includes(upg.id)
         const reqOwned = !upg.req || state.upgrades.includes(upg.req)
-        const canAfford = state.credits >= upg.cost
+        const isComponent = !!upg.componentCost
+        const canAfford = isComponent
+          ? componentsHeld >= upg.componentCost
+          : state.credits >= upg.cost
         return (
           <div
             key={upg.id}
@@ -58,7 +82,11 @@ export function ShipyardBlock({ state, dispatch }) {
                   whiteSpace: 'nowrap',
                 }}
               >
-                {owned ? 'OWNED' : `${upg.cost}cr`}
+                {owned
+                  ? 'OWNED'
+                  : isComponent
+                    ? `${upg.componentCost} comp`
+                    : `${upg.cost}cr`}
               </span>
             </div>
             {!owned && reqOwned && (

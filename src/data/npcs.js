@@ -728,7 +728,17 @@ export const NPCS = {
           { text: "[Hand over Petra's report from the Sump.]", go: 'petra_report',
             requireFlag: 'petra_ignored',
             requireNotFlag: 'petra_resolved' },
+          { text: "Old Maren wants to know your outlet list, for testimony.",
+            go: 'outlets_confirm',
+            requireFlag: 'maren_quest_known',
+            requireNotFlag: 'barker_outlets_confirmed' },
         ],
+      },
+      outlets_confirm: {
+        text: "[He doesn't pause to consider.]\n\nThirty-two independent outlets, six of them outside Combine licensing entirely. The list is committed. They've published worse from less.\n\nTell Maren the outlets are ready. When she's prepared to testify, I record same-day, publish within the hour.",
+        flagsOnEnter: ['barker_outlets_confirmed'],
+        options: [{ text: "I will. Thank you.", go: null,
+          flag: 'barker_outlets_msg', flagLabel: '📰 Barker: outlet list confirmed' }],
       },
       petra_report: {
         text: "[He reads the wafer's contents on his terminal. His expression goes from professional interest to something quieter.]\n\nEighteen months. Forty thousand people. Combine's Mining Oversight Office filed the engineer's escalation in a drawer.\n\n[He looks up.]\n\nI'll have this published in three independent outlets by tomorrow. The Combine cannot now claim ignorance. Whether they evacuate the asteroid is the next question — but at least the question is a public one now.\n\nThank you, Captain. This is exactly what I'm here for.",
@@ -865,6 +875,10 @@ export const NPCS = {
           { text: "I'm a trader. Looking for a port.", go: 'trader' },
           { text: "What do you hear on those transmissions?", go: 'transmissions' },
           { text: "Anything to trade?", go: 'trade' },
+          { text: "Maren at The Wreck wants to know if a 32-outlet route is clean.",
+            go: 'route_confirm',
+            requireFlag: 'maren_quest_known',
+            requireNotFlag: 'sable_route_confirmed' },
         ],
       },
       transmissions: {
@@ -893,6 +907,12 @@ export const NPCS = {
       trade: {
         text: "Components in quantity — everything that runs the relay. Food and medical I'd pay above rate for. It's just me out here.\n\nI'd also trade information. I have a lot of it.",
         options: [{ text: "Tell me about the transmissions.", go: 'transmissions' }],
+      },
+      route_confirm: {
+        text: "[She listens to the request. Nods slowly.]\n\nThirty-two outlets, simultaneous publish. Yes — I can route that. The Combine won't be able to suppress it once it leaves my relay. By the time they notice the burst, it's already in print on twenty different stations.\n\nTell Maren the route is clean. I'll handle the technical end when Barker is ready to send.",
+        flagsOnEnter: ['sable_route_confirmed'],
+        options: [{ text: "I will. Thank you.", go: null,
+          flag: 'sable_route_msg', flagLabel: '📡 Sable: route confirmed' }],
       },
     },
   },
@@ -961,7 +981,8 @@ export const NPCS = {
         ],
       },
       kasey_friend: {
-        text: "Excellent person. Eleven months on Iron Drift and still finding ways to be useful. Respect that enormously.\n\nTen percent on anything you sell me today. I keep my word — competitive advantage in this business.",
+        text: "Excellent person. Eleven months on Iron Drift and still finding ways to be useful. Respect that enormously.\n\nTen percent on anything you sell me today. I keep my word — competitive advantage in this business.\n\n[A nod, almost imperceptible.]\n\nIf you ever need work done that the Combine wouldn't license, my mechanic Cass is in the engineering crawl. Tell her I sent you.",
+        flagsOnEnter: ['rook_trust'],
         options: [{ text: "What are you buying?", go: 'buying' }],
       },
       buying: {
@@ -998,7 +1019,15 @@ export const NPCS = {
       },
       supplying: {
         text: "I didn't figure it out until after. Seven years of thinking about it.\n\nThey were supplying us with enough to keep us going. Not enough to win. Every time we got close to a decisive engagement, we'd be suddenly short on something critical. And the Combine would offer a 'humanitarian' ceasefire.\n\nThe war lasted thirteen years because they needed it to.",
-        options: [{ text: "To justify the jump gate licensing.", go: null }],
+        flagsOnEnter: ['motes_trust'],
+        options: [
+          { text: "To justify the jump gate licensing.", go: null },
+          { text: '"Who else here knows the wars from your side?"', go: 'r_who_else' },
+        ],
+      },
+      r_who_else: {
+        text: "Two of us, properly. Old Maren wrote the only Frontier-side history of it that anyone bothered. Seven hundred pages. Unpublished — Combine licensing rules.\n\nThere's also a medic on this ship who saw the specific weapons that, officially, never arrived here. They go by Doctor. No last name.\n\nI'd suggest you let them know I sent you. Both of them. They don't open their doors otherwise.",
+        options: [{ text: "Thank you, Captain.", go: null }],
       },
       edda: {
         text: "Once. She came to The Wreck about eight years ago. Asked me everything I just told you.\n\nShe had a theory. I had a story. We traded. She went to Kessel. I heard nothing after — until rumours started that she'd found something, that the Combine was looking, that she was alive and hiding.\n\nI hoped she made it.",
@@ -1590,6 +1619,133 @@ export const NPCS = {
       v3_more: {
         text: "There's a cartographer at Meridian who buys system locations like that one. She's been looking for it for years. If you don't go yourself, sell it to her. She'll know what to do.\n\nThat's all. I'm out of stories.",
         options: [{ text: "Understood.", go: null }],
+      },
+    },
+  },
+
+  cass: {
+    id: 'cass',
+    name: 'Cass',
+    title: 'Mechanic, Engineering Crawl',
+    portrait: 'cass',
+    greeting: "[Mid-thirties, hands black with grease, working on something that has no business being functional and is anyway.]\n\nYou're in my crawl. Rook sent you. Welcome.",
+    tree: {
+      root: {
+        text: "I do modifications. Not the ones the Combine licenses — the other ones. Better, in some honest ways. Different in others.\n\nI take payment in components. Not credits. The Combine traces credits.\n\nWhat are you here for?",
+        options: [
+          { text: '"Show me what you have."', go: 'r_show' },
+          { text: '"How do you keep this ship running?"', go: 'r_running' },
+          { text: '"What\'s the towel for?"', go: 'r_towel' },
+          { text: '[Leave.]', go: null },
+        ],
+      },
+      r_show: {
+        text: "List's on the wall, opposite the bench. Pick one. Or two. Pay in components. Walk out lighter and quieter than when you walked in.",
+        options: [{ text: '[Look at the modifications.]', go: null }],
+      },
+      r_running: {
+        text: "By appointment, mostly. The Wreck wasn't built to stand still and the longer it does the more inventive my modifications get.\n\nThere's a blueprint in my head that doesn't exist anywhere on paper. If I die, the engines stop within forty-eight hours.\n\n[A grin.]\n\nDon't tell anyone.",
+        options: [{ text: '[You won\'t.]', go: null }],
+      },
+      r_towel: {
+        text: "[She glances at the shelf. The inventory list reads, near the top: 'towel (1).']\n\nYou always know where you are if you've got your towel. Don't ask me why. Just do.",
+        options: [{ text: '[Leave it.]', go: null }],
+      },
+    },
+  },
+
+  maren: {
+    id: 'maren',
+    name: 'Old Maren',
+    title: 'Historian, The Wreck',
+    portrait: 'maren',
+    greeting: "[An older woman at a desk piled with handwritten paper. The piles are organised in a system only she understands.]\n\nMotes told me you might come.",
+    entry: [
+      { requireFlag: 'maren_will_testify', node: 'root_committed' },
+      { requireFlags: ['sable_route_confirmed', 'barker_outlets_confirmed'], node: 'root_both' },
+      { requireFlag: 'sable_route_confirmed', node: 'root_route' },
+      { requireFlag: 'barker_outlets_confirmed', node: 'root_outlets' },
+      { node: 'root' },
+    ],
+    tree: {
+      root: {
+        text: "[She gestures at the room. Books on every surface. Stacks of paper that are clearly a manuscript — dense, handwritten, thousands of pages.]\n\nMotes doesn't trust easily. The fact that he sent you is more meaningful to me than my polite tone might suggest.",
+        options: [
+          { text: '"What is all this?"', go: 'r_pages' },
+          { text: '"I want you to testify."', go: 'r_testify' },
+          { text: '[Stand a moment with the room. Then leave.]', go: null },
+        ],
+      },
+      r_pages: {
+        text: "Seven hundred pages of the Frontier Wars from the side that lost. I wrote them because no one else would. Nine years.\n\nThey are unpublished. They are unpublishable. Combine licensing rules are extensive and creative.\n\nIf I am asked to testify in person — to a journalist, in public — it might give the pages a context.",
+        options: [{ text: '"I want you to testify."', go: 'r_testify' }],
+      },
+      r_testify: {
+        text: "I will, but only if I know it will reach people. Two confirmations.\n\nFirst: that the transmission route is clean. Sable, at Ashmore Relay, can verify. Second: that the outlets that will publish are real and committed. Barker, at New Geneva, can confirm the list.\n\nBring me both, and I will testify on whatever schedule you and Barker need.",
+        flagsOnEnter: ['maren_quest_known'],
+        options: [{ text: '"I\'ll bring both."', go: null }],
+      },
+      root_route: {
+        text: "[She glances up.]\n\nSable's confirmation is solid. The route is clean. Now Barker's outlet list.",
+        options: [{ text: '[Nod. Leave.]', go: null }],
+      },
+      root_outlets: {
+        text: "[She glances up.]\n\nBarker's outlet list is ready. Now Sable's route confirmation.",
+        options: [{ text: '[Nod. Leave.]', go: null }],
+      },
+      root_both: {
+        text: "[She looks at you for a long moment. Then nods once, decisively.]\n\nVery well. I will testify. Bring Barker my address when he's ready to record. Until then — thank you, Captain.\n\n[A small smile, the first you've seen from her.]\n\nThirty years of writing toward something that wouldn't reach anyone. You've made it reach.",
+        flagsOnEnter: ['maren_will_testify'],
+        options: [{ text: '[Nod. Leave.]', go: null,
+          frontierDelta: 10, flag: 'maren_committed_msg', flagLabel: '✓ Maren will testify' }],
+      },
+      root_committed: {
+        text: "[She's writing a new page when you come in. She does not look up.]\n\nThe testimony is yours when Barker calls for it. Nothing is wasted now.",
+        options: [{ text: '[Leave her to it.]', go: null }],
+      },
+    },
+  },
+
+  the_doctor: {
+    id: 'the_doctor',
+    name: 'The Doctor',
+    title: 'Medical Bay, The Wreck',
+    portrait: 'the_doctor',
+    greeting: "[A medic in a worn coat, no name tag. They look up briefly.]\n\nWhat's the injury?",
+    entry: [
+      { requireFlag: 'doctor_will_testify', node: 'root_committed' },
+      { node: 'root' },
+    ],
+    tree: {
+      root: {
+        text: "[They wait. They are good at waiting.]\n\nNo injury, then. Which is interesting, because the only people who come to my bay without an injury are people who want something that isn't medicine.\n\nWhat is it?",
+        options: [
+          { text: '"I want you to testify about the wars."', go: 'r_testify' },
+          { text: '"Just looking around."', go: null },
+        ],
+      },
+      r_testify: {
+        text: "[A long, careful look.]\n\nThirteen years of frontier medicine. Specific weapons-injuries. Specific ones, on patients whose paperwork said the weapons that caused them weren't shipped to our side of the war.\n\nI have what you need. I cannot testify. Not without immunity. The Combine will end me the day my name is in print.",
+        options: [
+          { text: '"What if Barker publishes? You\'d be famous, not silent."', go: 'r_explain' },
+          { text: '[Leave.]', go: null },
+        ],
+      },
+      r_explain: {
+        text: "[They consider this. Long.]\n\n...continue.",
+        options: [
+          { text: '"If your testimony is part of a story they can\'t suppress, the cost of acting against you becomes higher than the cost of leaving you alone. Publication functions as immunity."', go: 'r_accept' },
+        ],
+      },
+      r_accept: {
+        text: "[They breathe out, slowly.]\n\nYou're right. I have known this. I have been waiting for someone else to say it.\n\nWhen Barker calls for it, I will testify. Bring me his timeline when you have it.",
+        flagsOnEnter: ['doctor_will_testify'],
+        options: [{ text: '[Nod. Leave.]', go: null,
+          frontierDelta: 8, flag: 'doctor_committed_msg', flagLabel: '✓ The Doctor will testify' }],
+      },
+      root_committed: {
+        text: "[They nod once.]\n\nWhen Barker calls.",
+        options: [{ text: '[Leave.]', go: null }],
       },
     },
   },

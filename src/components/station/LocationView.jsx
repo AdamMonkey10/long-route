@@ -111,7 +111,7 @@ export function LocationView({ state, dispatch, sys, loc, sessionState }) {
 
       {hasDock && <DockBlock state={state} dispatch={dispatch} sys={sys} services={services} />}
       {hasMarket && <MarketBlock state={state} dispatch={dispatch} sys={sys} />}
-      {hasShipyard && <ShipyardBlock state={state} dispatch={dispatch} />}
+      {hasShipyard && <ShipyardBlock state={state} dispatch={dispatch} loc={loc} />}
     </div>
   )
 }

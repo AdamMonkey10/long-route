@@ -10,4 +10,19 @@ export const UPGRADES = [
   { id: 'shields_2', name: 'Shield Generator II', desc: 'Military-grade. The Combine frowns on this. Part of the appeal.', cost: 2100, effect: 'shields', value: 1, req: 'shields_1' },
   { id: 'armour', name: 'Hull Plating', desc: 'Adds 25 maximum hull. Heavy. Worth it.', cost: 1600, effect: 'hull', value: 25, req: null },
   { id: 'scanner', name: 'Deep Scanner', desc: 'Reveals enemy hull totals and highlights rare market anomalies.', cost: 1400, effect: 'scanner', value: 1, req: null },
+
+  // Cass's modifications — only purchasable from Cass at The Wreck. Paid in
+  // components (cargo commodity) rather than credits.
+  { id: 'silent_running', name: 'Silent Running',
+    desc: "Engine baffling. The ship is much quieter on approach. Reduces hyperspace encounter chance ~15%.",
+    componentCost: 15, effect: 'combat_chance', value: -0.15, req: null, availableAt: 'cass' },
+  { id: 'hidden_compartment', name: 'Hidden Compartment',
+    desc: "Five extra cargo slots. Contraband stowed here is not detected on inspection.",
+    componentCost: 20, effect: 'hidden_cargo', value: 5, req: null, availableAt: 'cass' },
+  { id: 'deep_sensor_array', name: 'Deep Sensor Array',
+    desc: "Reveals enemy hull totals in combat. (Equivalent to Combine-licensed Deep Scanner; cheaper, paid in parts.)",
+    componentCost: 12, effect: 'scanner', value: 1, req: null, availableAt: 'cass' },
+  { id: 'stripped_weight', name: 'Stripped Weight',
+    desc: "Removes non-essential mass. All hyperspace fuel costs reduced 10% permanently.",
+    componentCost: 25, effect: 'fuel_mod', value: 0.1, req: null, availableAt: 'cass' },
 ]
