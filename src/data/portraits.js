@@ -31,4 +31,8 @@ export const PORTRAIT_DATA = {
   the_kid: { bg: '#0a1818', face: '#8a6a50', hair: '#403020', eye: '#80c0a0', exp: 'wide' },
   rennick: { bg: '#0a0a0a', face: '#807060', hair: '#a0a0a0', eye: '#5070a0', exp: 'gaunt' },
   ines: { bg: '#10182a', face: '#d0b090', hair: '#3a3030', eye: '#80a0c0', exp: 'sharp' },
+  vasanta: { bg: '#0a1820', face: '#a07060', hair: '#1a1410', eye: '#6090a0', exp: 'tired' },
+  linnea: { bg: '#0a1820', face: '#d0c0b0', hair: '#806040', eye: '#a0c0e0', exp: 'sharp' },
+  dayo: { bg: '#1a1408', face: '#80502f', hair: '#1a0808', eye: '#80c0a0', exp: 'wide' },
+  dayo_uncle: { bg: '#1a1208', face: '#704030', hair: '#605050', eye: '#a08060', exp: 'kind' },
 }

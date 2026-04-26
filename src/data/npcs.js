@@ -436,7 +436,15 @@ export const NPCS = {
       },
       trade: {
         text: "Ore, obviously. Processed components. We're critically short on medical — three workers on restricted duty because we've got no analgesics.\n\nBring medical supplies and I'll pay above market. That's not negotiation, that's fact.",
-        options: [{ text: "I'll see what I can do.", go: null }],
+        options: [
+          { text: "I'll see what I can do.", go: null },
+          { text: "Who'd I be helping, exactly?", go: 'trade_who' },
+        ],
+      },
+      trade_who: {
+        text: "Doctor Vasanta. Medical Bay's down corridor four. She runs the whole bay on optimism and rationed bandages. Tell her I sent you, she'll see you.\n\n[Quieter.]\n\nIf you're going down there: she's been short on a piece of specific equipment for three years. You'll know it when she mentions it.",
+        options: [{ text: "I'll find her.", go: null,
+          flag: 'vasanta_intro', flagLabel: '⚕ Dr. Vasanta — Medical Bay' }],
       },
       farside: {
         text: "Officially closed. Unofficially — none of my business. The people who stop there occasionally buy ore. They pay cash and don't want receipts. I find this professionally adequate.\n\nDon't tell Vantage I said that.",
@@ -451,7 +459,15 @@ export const NPCS = {
       },
       bother: {
         text: "[Quietly]\n\nEvery single day. But Iron Drift needs the licensing. And licensing comes from the Combine.\n\nNow. Did you want to buy some ore?",
-        options: [{ text: "Yes. I did.", go: null }],
+        options: [
+          { text: "Yes. I did.", go: null },
+          { text: "Does anyone else watch what it does?", go: 'bother_else' },
+        ],
+      },
+      bother_else: {
+        text: "[A pause. He looks past you, then back.]\n\nLinnea, in the Geology Lab. Officially she counts rocks. Unofficially, she's been counting transmissions for years. I don't ask. She doesn't tell. She's also better than I am at noticing things.\n\nIf you decide to speak to her, I will not have told you to.",
+        options: [{ text: "I never heard of her.", go: null,
+          flag: 'linnea_intro', flagLabel: '🔬 Linnea — Geology Lab' }],
       },
     },
   },
@@ -795,7 +811,16 @@ export const NPCS = {
         options: [
           { text: "I'm looking for Edda Vance.", go: 'edda' },
           { text: "What can you tell me about the Combine?", go: 'combine' },
+          { text: "I'm looking for medical equipment for Iron Drift.", go: 'equipment',
+            requireFlag: 'vasanta_quest' },
           { text: "What's trading here?", go: 'trade' },
+        ],
+      },
+      equipment: {
+        text: "[A long, thoughtful look.]\n\nA pulmonary calibrator, model 7-V. Yes. The Combine pharmacy stopped stocking it because the company that made it lost its licensing. The company is still operating, however, on a station that doesn't appear on any map. We have an arrangement.\n\n[He produces a small case from nowhere obvious.]\n\nThis is yours. Take it to Vasanta. Tell her it didn't come from me. Tell her it didn't come from anyone.",
+        options: [
+          { text: "[Take the case.]", go: null,
+            flag: 'farside_equipment_held', flagLabel: '⚕ Calibrator: en route to Iron Drift' },
         ],
       },
       edda: {
@@ -1468,6 +1493,407 @@ export const NPCS = {
       v3_more: {
         text: "There's a cartographer at Meridian who buys system locations like that one. She's been looking for it for years. If you don't go yourself, sell it to her. She'll know what to do.\n\nThat's all. I'm out of stories.",
         options: [{ text: "Understood.", go: null }],
+      },
+    },
+  },
+
+  vasanta: {
+    id: 'vasanta',
+    name: 'Dr. Vasanta',
+    title: 'Station Medic, Iron Drift',
+    portrait: 'vasanta',
+    greeting: "[She doesn't look up. She is mid-stitch.]\n\nFirst aid kit's by the door. Take what you need. Leave what you don't.",
+    entry: [
+      { requireFlag: 'vasanta_resolved', node: 'root_resolved' },
+      { requireFlag: 'farside_equipment_held', node: 'root_delivering' },
+      { requireFlag: 'vasanta_quest', node: 'root_quest' },
+      { node: 'root' },
+    ],
+    tree: {
+      root: {
+        text: "[The room is one bed and a cabinet. The cabinet is too small. The room is too small. Vasanta is pragmatic about both.]\n\nI'm Vasanta. I run this. I run all of this. There's an inventory list on the wall. The list is shorter than it should be.",
+        options: [
+          { text: '"What do you need?"', go: 'r_need' },
+          { text: '"You\'re running this on what?"', go: 'r_running' },
+          { text: '[Look around quietly.]', go: 'r_quiet' },
+        ],
+      },
+      r_need: {
+        text: "Specific equipment. A pulmonary calibrator, model 7-V or later. The Combine pharmacy stopped stocking it three years ago. The replacements are inferior — three patients a year die who shouldn't.\n\nThere's a man at Farside who deals in things the Combine won't stock. Goes by Ghost. If you can get me one, I will be in your debt and so will the eight thousand patients I'll keep alive.\n\n[She finishes the stitch.]\n\nNo pressure.",
+        flagsOnEnter: ['vasanta_quest'],
+        options: [
+          { text: '"I\'ll see what I can do."', go: null },
+          { text: '"What\'s in it for me?"', go: 'r_inwhat' },
+        ],
+      },
+      r_inwhat: {
+        text: "[She finally looks up.]\n\nMy gratitude. Iron Drift's gratitude. A working calibrator. Eight thousand fewer respiratory failures over the next decade.\n\nIf those don't satisfy: I have a coil of pre-war copper wiring nobody's claimed. Worth, on a good day, more than the equipment. It's yours when you bring the calibrator.",
+        options: [{ text: '"Done."', go: null }],
+      },
+      r_running: {
+        text: "Optimism, mostly. Optimism and a stockpile of bandages I have been rationing for two years.\n\nThis is what they don't tell you about frontier medicine: it's not the lack of equipment that wears you down. It's the people who didn't need to be hurt.",
+        options: [{ text: '[Nod.]', go: null }],
+      },
+      r_quiet: {
+        text: "[A patient on the bed is asleep. Younger than you'd expect. The bandages on his hands are fresh.]\n\n[Vasanta sees you noticing.]\n\nDrill bit shattered. He'll keep both hands. The next one we don't have the equipment for, we won't.",
+        options: [
+          { text: '"Tell me what you need."', go: 'r_need' },
+          { text: '[Leave quietly.]', go: null },
+        ],
+      },
+
+      root_quest: {
+        text: "[She glances up.]\n\nFarside. Ghost. Pulmonary calibrator. Don't tell anyone what it's for.",
+        options: [
+          { text: '"Still looking."', go: null },
+          { text: '"How are the patients?"', go: 'r_patients' },
+        ],
+      },
+      r_patients: {
+        text: "Surviving. The way frontier medicine surviving works — narrowly, with creativity, and at considerable cost to the medic.\n\nBring me the calibrator and there'll be three more of them.",
+        options: [{ text: '[Nod.]', go: null }],
+      },
+
+      root_delivering: {
+        text: "[She looks at you. Then at the case in your hand.]\n\nIs that what I think it is?",
+        options: [
+          { text: '[Hand it over.]', go: 'r_delivered' },
+          { text: '[Hold it back, just for a moment. Smile.]', go: 'r_delivered' },
+        ],
+      },
+      r_delivered: {
+        text: "[She takes the case. She does not, immediately, open it. She looks at it. Then at you.]\n\n...this works. Thank you, Captain.\n\n[A small package — copper wiring, neatly bundled — slides across the desk.]\n\nNot many people would have made the trip. The eight thousand will not know. I will.",
+        flagsOnEnter: ['vasanta_resolved'],
+        options: [
+          { text: '[Take the wiring. Leave.]', go: null,
+            frontierDelta: 10, flag: 'vasanta_resolved_msg', flagLabel: '✓ Vasanta has the calibrator' },
+        ],
+      },
+
+      root_resolved: {
+        text: "[She nods at you with the familiar fatigue of someone very tired and very glad to see you anyway.]\n\nThe calibrator is working. Three patients are alive who wouldn't be.\n\nThank you.",
+        options: [{ text: '[Nod. Leave.]', go: null }],
+      },
+    },
+  },
+
+  linnea: {
+    id: 'linnea',
+    name: 'Linnea',
+    title: 'Station Geologist, Iron Drift',
+    portrait: 'linnea',
+    greeting: "[A stack of paper printouts. A precision pencil. She is annotating.]",
+    entry: [
+      { requireFlag: 'linnea_quest', node: 'root_data_given' },
+      { node: 'root' },
+    ],
+    tree: {
+      root: {
+        text: "I'm Linnea. I'm officially the geologist. Officially, I monitor the asteroid's mineral content.\n\n[She glances at the door.]\n\nUnofficially, I monitor what Section 7 transmits. I have done so for four years. I have eleven thousand pages of metadata and no idea what to do with it.",
+        options: [
+          { text: '"What does it transmit?"', go: 'r_what' },
+          { text: '"Why are you telling me?"', go: 'r_why' },
+          { text: '"Show me what you have."', go: 'r_show' },
+          { text: '[Don\'t pry. Leave her to her work.]', go: null },
+        ],
+      },
+      r_what: {
+        text: "I don't know. The signals are encrypted above any clearance I'll ever hold. What I have is metadata: timing, frequency, duration, the events that trigger spikes.\n\nThe spikes correlate with Combine fleet movements two systems away. They correlate with executive transmissions through Ashmore. They correlate, three times in four years, with the disappearance of independent traders.\n\nIt is not nothing.",
+        options: [
+          { text: '"Why are you telling me?"', go: 'r_why' },
+          { text: '"Give me what you have."', go: 'r_show' },
+        ],
+      },
+      r_why: {
+        text: "Because you've come further than the others. Because you ask Okafor about the listening post and don't immediately leave. Because the eight thousand people on this station will not benefit from my eleven thousand pages until someone uses them.\n\n[She slides a data chip across.]\n\nThis is everything. It's encrypted with a key I'll send to Sable at Ashmore. If she trusts you, she'll decrypt it.",
+        options: [
+          { text: '[Take it.]', go: null,
+            flag: 'linnea_quest', flagLabel: "📡 Linnea's transmission metadata" },
+        ],
+      },
+      r_show: {
+        text: "[She slides a data chip across. The chip is not labeled.]\n\nEverything I have. Encrypted. Sable at Ashmore can decrypt it — I'll forward her the key.\n\n[Quieter.]\n\nSection 7's transmissions have been ramping up. I don't know what's coming. I'd like for someone to.",
+        options: [
+          { text: '"You\'ll be safe?"', go: 'r_safe' },
+          { text: '[Take it. Leave.]', go: null,
+            flag: 'linnea_quest', flagLabel: "📡 Linnea's transmission metadata" },
+        ],
+      },
+      r_safe: {
+        text: "[A short laugh, no humour in it.]\n\nNobody who works in the Geology Lab is safe. We just don't talk about it.\n\nGo.",
+        options: [
+          { text: '[Take it. Leave.]', go: null,
+            flag: 'linnea_quest', flagLabel: "📡 Linnea's transmission metadata" },
+        ],
+      },
+
+      root_data_given: {
+        text: "[She nods at the empty space on her desk where the chip used to sit.]\n\nIt's with you now. Whatever you do with it, it'll be more than I could.",
+        options: [{ text: '[Leave.]', go: null }],
+      },
+    },
+  },
+
+  dayo: {
+    id: 'dayo',
+    name: 'Dayo Okafor',
+    title: 'Wants To Leave, Iron Drift',
+    portrait: 'dayo',
+    greeting: "[A teenager at the end of the long table, eating reheated noodles with the focus of someone about to do something inadvisable.]",
+    entry: [
+      { requireFlag: 'dayo_resolved', node: 'root_done' },
+      { requireFlag: 'dayo_r3', node: 'root_after_r3' },
+      { requireFlag: 'dayo_l3_done', node: 'root_l3_done' },
+      { requireFlag: 'dayo_r2', node: 'root_after_r2' },
+      { requireFlag: 'dayo_l2_done', node: 'root_l2_done' },
+      { requireFlag: 'dayo_r1', node: 'root_after_r1' },
+      { requireFlag: 'dayo_l1_done', node: 'root_l1_done' },
+      { requireFlag: 'dayo_l1', node: 'root_carrying' },
+      { node: 'root' },
+    ],
+    tree: {
+      root: {
+        text: "[The teenager looks up.]\n\nYou're a trader, right? Like, an actual one, with a ship and stuff?\n\n[They don't wait for an answer.]\n\nMy uncle's on New Cascadia. Tomas Okafor. I've been writing him letters. The mail run is twelve weeks. You'd be there in days.",
+        options: [
+          { text: '"How old are you?"', go: 'r_age' },
+          { text: '"What do you want?"', go: 'r_what' },
+          { text: '[Eat your noodles, kid.]', go: null },
+        ],
+      },
+      r_age: {
+        text: "Old enough to want to leave. Not old enough to do it without my dad signing the form.\n\n[Beat.]\n\nHe won't sign the form. So.",
+        options: [
+          { text: '"What do you want from me?"', go: 'r_what' },
+        ],
+      },
+      r_what: {
+        text: "[They produce an envelope. Real paper. The address is hand-written.]\n\nTake this to my uncle. The Distillery on New Cascadia. He works the back office. He's the only person I've got who isn't on this rock.\n\nNo charge. I haven't got any credits.",
+        options: [
+          { text: '[Take the letter.]', go: 'r_taken',
+            flag: 'dayo_l1', flagLabel: "✉ Dayo's letter (1 of 3)" },
+          { text: '"Find someone else."', go: 'r_dismiss' },
+        ],
+      },
+      r_taken: {
+        text: "[Genuine surprise.]\n\nReally? Just like that?\n\n[Recovers fast.]\n\nThanks. He'll know what to do with it. Bring back whatever he writes me. Or — if there's nothing for me — anything for my dad.\n\n[Quieter.]\n\nDad won't talk to him. They don't talk. You'll see why.",
+        options: [{ text: '[Nod.]', go: null }],
+      },
+      r_dismiss: {
+        text: "[A flat shrug.]\n\nFine. I'll keep eating the noodles.\n\n[They go back to the bowl. Conversation ended.]",
+        options: [{ text: '[Leave.]', go: null }],
+      },
+
+      root_carrying: {
+        text: "[They glance at you, then at where the letter would be in your pocket.]\n\nStill got it?",
+        options: [
+          { text: '[Nod.]', go: null },
+          { text: '"What\'s the deal between him and your dad?"', go: 'r_deal' },
+        ],
+      },
+      r_deal: {
+        text: "[A long pause.]\n\nDad won't say. Uncle won't say. Whatever it was, it was thirty years ago and they're both still angry.\n\nI was hoping you'd find out.",
+        options: [{ text: '[Leave with the letter.]', go: null }],
+      },
+
+      // After delivering letter 1 (uncle's reply received)
+      root_after_r1: {
+        text: "[They look up sharply when you walk in.]\n\nYou went?",
+        options: [
+          { text: '[Hand over the reply.]', go: 'r_returned_1' },
+          { text: '[Hold onto it. Say nothing.]', go: 'r_keep_1' },
+        ],
+      },
+      r_returned_1: {
+        text: "[They open it carefully. Read. Read again. Their face does several things, none of them happy.]\n\n[Eventually.]\n\nHe wrote back. He's never written back before.\n\n[They fold it and put it away.]\n\nIf you'll do another — there's more I want to ask him.",
+        flagsOnEnter: ['dayo_l1_done'],
+        options: [{ text: '[Wait for the next letter.]', go: null }],
+      },
+      r_keep_1: {
+        text: "[They look at you. Then at the reply you didn't hand over.]\n\nIf you've read it, just say. I'd rather know.",
+        options: [
+          { text: '"I read it."', go: 'r_read_1', flag: 'letters_opened',
+            flagLabel: '👁 You read the letter' },
+          { text: '"I haven\'t read it."', go: 'r_not_read_1' },
+        ],
+      },
+      r_read_1: {
+        text: "[A pause.]\n\n...okay. What did it say.",
+        options: [
+          { text: '[Tell them what the uncle wrote.]', go: 'r_told_1' },
+          { text: '[Keep the contents to yourself for now.]', go: 'r_kept_1' },
+        ],
+      },
+      r_told_1: {
+        text: "[They listen. They are very still.]\n\n...thanks for telling me. That's not what I wanted, but it's something I needed.\n\nNext one I'll write a different question.",
+        flagsOnEnter: ['dayo_l1_done'],
+        options: [{ text: '[Wait.]', go: null }],
+      },
+      r_kept_1: {
+        text: "[A short, sharp nod.]\n\nFair. I'll read it later.\n\n[They take it.]",
+        flagsOnEnter: ['dayo_l1_done'],
+        options: [{ text: '[Leave.]', go: null }],
+      },
+      r_not_read_1: {
+        text: "[Genuine relief.]\n\nThanks. Most people would have.\n\n[They take it.]",
+        flagsOnEnter: ['dayo_l1_done'],
+        options: [{ text: '[Leave.]', go: null }],
+      },
+
+      // Cycle 2 prompt
+      root_l1_done: {
+        text: "[A folded sheet, ready.]\n\nSecond one. He answered the easy questions. This one's harder.",
+        options: [
+          { text: '[Take it.]', go: null,
+            flag: 'dayo_l2', flagLabel: "✉ Dayo's letter (2 of 3)" },
+          { text: '"Take a breath. Are you sure?"', go: 'r_sure_2' },
+        ],
+      },
+      r_sure_2: {
+        text: "[They look at you properly, maybe for the first time.]\n\nNo. But asking is better than not.",
+        options: [
+          { text: '[Take the letter.]', go: null,
+            flag: 'dayo_l2', flagLabel: "✉ Dayo's letter (2 of 3)" },
+        ],
+      },
+
+      // After cycle 2
+      root_after_r2: {
+        text: "[They've been waiting for this one.]\n\nWhat'd he say?",
+        options: [
+          { text: '[Hand over the reply.]', go: 'r_returned_2' },
+          { text: '"I read it."', go: 'r_read_2', flag: 'letters_opened',
+            flagLabel: '👁 You read the letter' },
+        ],
+      },
+      r_returned_2: {
+        text: "[They read. They sit with it for a long time.]\n\n...he says it was about money. He says my dad was right to be angry. He says he should have apologised twenty years ago and never did.\n\n[Quieter.]\n\nThanks.",
+        flagsOnEnter: ['dayo_l2_done'],
+        options: [{ text: '[Wait for the third.]', go: null }],
+      },
+      r_read_2: {
+        text: "[A nod.]\n\nWhat did it say.",
+        options: [
+          { text: '[Tell them.]', go: 'r_told_2' },
+        ],
+      },
+      r_told_2: {
+        text: "[A long silence.]\n\n...money. Of course it was money.\n\nThanks. One more letter and I think I'll have what I need.",
+        flagsOnEnter: ['dayo_l2_done'],
+        options: [{ text: '[Wait.]', go: null }],
+      },
+
+      // Cycle 3 prompt
+      root_l2_done: {
+        text: "[The third letter is short. They don't seal this one — leave it open in the envelope.]\n\nLast one. Tell him I'm coming. Whether he answers the form or not.",
+        options: [
+          { text: '[Take it.]', go: null,
+            flag: 'dayo_l3', flagLabel: "✉ Dayo's letter (3 of 3)" },
+        ],
+      },
+
+      // After cycle 3
+      root_after_r3: {
+        text: "[They're standing this time, not eating, when you walk in.]\n\nWell?",
+        options: [
+          { text: '[Hand over the final reply.]', go: 'r_returned_3' },
+          { text: '"I read it."', go: 'r_read_3', flag: 'letters_opened',
+            flagLabel: '👁 You read the letter' },
+        ],
+      },
+      r_returned_3: {
+        text: "[They read it standing. Twice.]\n\n[They fold it. Put it inside their jacket. Fold their arms.]\n\nHe says he'll sign the form. He says he should have done it twenty years ago for my dad. He says I should come.\n\n[A breath.]\n\nThank you, Captain. I owe you one. I'll find a way to pay it.",
+        flagsOnEnter: ['dayo_l3_done', 'dayo_resolved'],
+        options: [{ text: '[Nod.]', go: null,
+          frontierDelta: 5, flag: 'dayo_resolved_msg', flagLabel: '✓ Dayo: leaving Iron Drift' }],
+      },
+      r_read_3: {
+        text: "[They wait for it.]",
+        options: [
+          { text: '[Tell them: he\'ll sign the form.]', go: 'r_told_3' },
+        ],
+      },
+      r_told_3: {
+        text: "[A long, slow exhale.]\n\n...okay.\n\n[Quieter.]\n\nOkay. Thanks.",
+        flagsOnEnter: ['dayo_l3_done', 'dayo_resolved'],
+        options: [{ text: '[Nod. Leave.]', go: null,
+          frontierDelta: 5, flag: 'dayo_resolved_msg', flagLabel: '✓ Dayo: leaving Iron Drift' }],
+      },
+
+      root_l3_done: {
+        text: "[They're packing. Not much — a small bag.]\n\nNext ship to Cascadia. Tell my dad if you see him before I do. He'll be angry. That's fine.",
+        options: [{ text: '[Nod. Leave them to it.]', go: null }],
+      },
+      root_done: {
+        text: "[The seat at the end of the table is empty.]\n\n[The noodle bowl is still there.]",
+        options: [{ text: '[Leave it.]', go: null }],
+      },
+    },
+  },
+
+  dayo_uncle: {
+    id: 'dayo_uncle',
+    name: 'Tomas Okafor',
+    title: 'Back Office, The Distillery',
+    portrait: 'dayo_uncle',
+    greeting: "[A man behind a small desk in the back of the distillery's tasting room. Same jaw as the foreman; thirty years more tired.]",
+    entry: [
+      { requireFlag: 'dayo_l3', requireNotFlag: 'dayo_r3', node: 'root_l3' },
+      { requireFlag: 'dayo_l2', requireNotFlag: 'dayo_r2', node: 'root_l2' },
+      { requireFlag: 'dayo_l1', requireNotFlag: 'dayo_r1', node: 'root_l1' },
+      { requireFlag: 'dayo_resolved', node: 'root_done' },
+      { node: 'root_idle' },
+    ],
+    tree: {
+      root_idle: {
+        text: "[He looks up, polite, distant.]\n\nWelcome to the back office. The distillery's tour starts at the front. I do the books.",
+        options: [{ text: '[Leave.]', go: null }],
+      },
+
+      root_l1: {
+        text: "[He looks up, sees the envelope in your hand. Goes very still.]\n\n...is that from Dayo?",
+        options: [
+          { text: '[Hand it over.]', go: 'r1_hand' },
+        ],
+      },
+      r1_hand: {
+        text: "[He reads. Reads again. Sits back.]\n\n...he's still on Iron Drift.\n\n[Quietly.]\n\nI thought he'd have left by now. I thought my brother would have signed.\n\n[He writes a reply. Three pages. Folds it.]\n\nFor Dayo. Not my brother. Don't show my brother.",
+        options: [
+          { text: '[Take the reply.]', go: null,
+            flag: 'dayo_r1', flagLabel: "✉ Tomas's reply (1 of 3)" },
+        ],
+      },
+
+      root_l2: {
+        text: "[He stands when you come in this time.]\n\nThe second one. He's writing me, properly. Twenty years of nothing and now he writes me twice in two weeks.\n\n[He takes it. Sits to read.]",
+        options: [
+          { text: '[Wait.]', go: 'r2_wait' },
+        ],
+      },
+      r2_wait: {
+        text: "[He reads slowly. Pauses several times. Eventually puts the letter down and writes a reply, longer than the first. He folds it carefully.]\n\nThis one — he asked the harder thing. I owed him the harder answer.\n\nIt was about money. Tell my brother that, if you see him. Not the details. Just the word.",
+        options: [
+          { text: '[Take the reply.]', go: null,
+            flag: 'dayo_r2', flagLabel: "✉ Tomas's reply (2 of 3)" },
+        ],
+      },
+
+      root_l3: {
+        text: "[He doesn't read this one straight away. He looks at the envelope for a long time.]\n\n...he's coming.\n\n[He opens it. It's short. He reads it twice. Sets it aside.]",
+        options: [
+          { text: '[Wait.]', go: 'r3_wait' },
+        ],
+      },
+      r3_wait: {
+        text: "[He writes for ten minutes. The reply is one page. He signs it twice — once at the bottom, once at the top.]\n\nThe second signature is the form. Tell him I should have signed it the day his father refused to. Tell him there's a room for him here whenever the next ship is.\n\n[He hands it across.]\n\nThank you for carrying these. I had given up on the post.",
+        options: [
+          { text: '[Take the reply.]', go: null,
+            flag: 'dayo_r3', flagLabel: "✉ Tomas's reply (3 of 3)" },
+        ],
+      },
+
+      root_done: {
+        text: "[He smiles, briefly, properly.]\n\nDayo arrived three days ago. He's working the front of the distillery. He's terrible at it. He's also happier than I have seen anyone be at being terrible at something.\n\nThank you, Captain.",
+        options: [{ text: '[Nod. Leave.]', go: null }],
       },
     },
   },
