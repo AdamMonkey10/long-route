@@ -353,8 +353,20 @@ export const NPCS = {
           { text: "Information about Edda Vance.", go: 'edda', flag: 'otto_intro' },
           { text: "Who's the old man in the corner?", go: 'vasquez' },
           { text: "Tell me about New Geneva.", go: 'geneva' },
+          { text: '"How\'s Devlin Marsh been?"', go: 'r_devlin_grudge',
+            requireMinPlayerWinsVsDevlin: 3 },
+          { text: '"Devlin Marsh been in?"', go: 'r_devlin_friend',
+            requireMinDevlinWinsVsPlayer: 2 },
           { text: "Just the drink.", go: null },
         ],
+      },
+      r_devlin_grudge: {
+        text: "Devlin Marsh. He's been here every day this week.\n\nHe's moved from 'explaining what happened' to 'articulating a theory of fairness as it relates to games of skill.'\n\nI've started charging him a listening fee. He's paying it. This tells you something about how much he needs to talk about this.",
+        options: [{ text: '[Nod. Drink.]', go: null }],
+      },
+      r_devlin_friend: {
+        text: "Your friend Marsh.\n\n[A look.]\n\nHe came in this morning. Told me you and he go way back. That you have an 'ongoing professional relationship of mutual benefit.'\n\nHe seemed very pleased about this. He also asked if you'd left anything for him. Messages. Credits. 'As friends sometimes do.'\n\nI told him no.\n\nHe said you'd probably forgot. He didn't seem bothered.\n\nThis was somehow worse.",
+        options: [{ text: '[Pay for the drink. Leave.]', go: null }],
       },
       edda: {
         text: "She drank here. Tipped well. She was after old Combine cargo manifests — Frontier Wars era.\n\nI pointed her at Vasquez. He keeps records the way other people keep grudges: obsessively and with full emotional investment.",
@@ -979,7 +991,14 @@ export const NPCS = {
           { text: "Kasey says hello.", go: 'kasey_friend' },
           { text: "What are you buying?", go: 'buying' },
           { text: "What do you know about Cold Harbor?", go: 'cold_harbor' },
+          { text: '"You know a Devlin Marsh?"', go: 'r_devlin',
+            requireFlag: 'devlin_asked_favour' },
         ],
+      },
+      r_devlin: {
+        text: "[Pause.]\n\nHe sent a message. Said you'd vouch for him. Said you were good friends. Said he was 'well-regarded.'\n\nI've heard of Devlin Marsh.\n\nHe is regarded. The regard is specific.\n\n[A small smile.]\n\nI'll take a meeting. For you. Not for him.\n\nDon't tell him I said that. He'll make it into a story.",
+        options: [{ text: '[Nod. Won\'t breathe a word.]', go: null,
+          flag: 'devlin_rook_meeting', flagLabel: '🃏 Rook will take the meeting (for you)' }],
       },
       kasey_friend: {
         text: "Excellent person. Eleven months on Iron Drift and still finding ways to be useful. Respect that enormously.\n\nTen percent on anything you sell me today. I keep my word — competitive advantage in this business.\n\n[A nod, almost imperceptible.]\n\nIf you ever need work done that the Combine wouldn't license, my mechanic Cass is in the engineering crawl. Tell her I sent you.",
@@ -1624,6 +1643,170 @@ export const NPCS = {
     },
   },
 
+  devlin: {
+    id: 'devlin',
+    name: 'Devlin Marsh',
+    title: 'Professional Gambler',
+    portrait: 'devlin',
+    greeting: "[A man at his own corner, alone, wearing the face of someone who has convinced himself things are going well.]",
+    entry: [
+      // After game complete: passive coda. Player walks past, Devlin nods.
+      { requireFlag: 'game_complete', node: 'root_coda' },
+      // Late-game special encounter — only fires once per playthrough.
+      { requireFlag: 'devlin_payoff_grudge', requireNotFlag: 'devlin_grudge_resolved', node: 'root_payoff_grudge' },
+      { requireFlag: 'devlin_payoff_friendship', requireNotFlag: 'devlin_friendship_resolved', node: 'root_payoff_friendship' },
+      // Player has lost N times vs Devlin → loss-state greetings (he's "winning").
+      { requireMinDevlinWinsVsPlayer: 3, node: 'root_loss_3' },
+      { requireMinDevlinWinsVsPlayer: 2, node: 'root_loss_2' },
+      { requireMinDevlinWinsVsPlayer: 1, node: 'root_loss_1' },
+      // Player has won N times vs Devlin → win-state greetings (he's "wronged").
+      { requireMinPlayerWinsVsDevlin: 3, node: 'root_win_3' },
+      { requireMinPlayerWinsVsDevlin: 2, node: 'root_win_2' },
+      { requireMinPlayerWinsVsDevlin: 1, node: 'root_win_1' },
+      { node: 'root' },
+    ],
+    tree: {
+      root: {
+        text: "Ah. New face.\n\nDevlin Marsh. Professional gambler, student of human nature, exceptional judge of character.\n\n[Gestures at the empty seats around him.]\n\nI prefer my own company. By choice. People find my ability to read them uncomfortable. Understandable.\n\nDo you play Stone, Blade, Cloth?",
+        options: [
+          { text: '"Never heard of it."', go: 'r_invented' },
+          { text: '"Rock paper scissors?"', go: 'r_offended' },
+          { text: '"What are the stakes?"', go: 'r_stakes' },
+          { text: '"I\'ll pass."', go: 'r_pass' },
+        ],
+      },
+      r_invented: {
+        text: "Extraordinary. I invented it.\n\nSit down. I'll explain.\n\n[He produces a laminated card. The card is laminated. It is detailed. It is, structurally, the same as several other games you may have heard of, but he is going to be very put out if you mention this.]\n\nReady?",
+        options: [
+          { text: '"Let\'s play."', go: 'r_play' },
+          { text: '"Maybe later."', go: 'r_pass' },
+        ],
+      },
+      r_offended: {
+        text: "[Long pause.]\n\nI'm going to pretend you didn't say that and we're going to start this interaction again.\n\nDo you play Stone, Blade, Cloth?",
+        options: [
+          { text: '"...sure. Let\'s play."', go: 'r_play' },
+          { text: '"Right. Sorry. Carry on."', go: 'r_pass' },
+        ],
+      },
+      r_stakes: {
+        text: "Straight to business. I like that. Efficiency.\n\nWe'll discuss stakes once I've assessed your skill level. Which will take approximately one round. I'm very quick.",
+        options: [
+          { text: '"Deal me in."', go: 'r_play' },
+          { text: '"On second thought."', go: 'r_pass' },
+        ],
+      },
+      r_pass: {
+        text: "Your prerogative. The offer stands. I'll be here.\n\n[He is always here.]\n\nI'm always here.",
+        options: [{ text: '[Leave.]', go: null }],
+      },
+      r_play: {
+        // The dialogue option triggers OPEN_GAMBLING via the reducer hook.
+        text: "Excellent. Let's see what you've got.",
+        options: [{ text: '[Sit down at the table.]', go: null, openGambling: true }],
+      },
+
+      // ── Loss-state greetings (Devlin has won previously) ──
+      root_loss_1: {
+        text: "My friend! Sit down. Same table as last time — I've kept it.\n\nReady for a rematch? I've developed some new strategies since we played. Not that I needed them. But I've developed them anyway. For completeness.",
+        options: [
+          { text: '"Deal me in."', go: 'r_play' },
+          { text: '"Maybe another time."', go: 'r_pass' },
+        ],
+      },
+      root_loss_2: {
+        text: "[Standing up slightly as you approach.]\n\nMy associate! My good friend!\n\nI was telling people about you just yesterday. Describing your playing style. Very instructive for them.\n\nI may have also mentioned that you lost. This was relevant context.\n\nPlay again?",
+        options: [
+          { text: '"Sure. One more."', go: 'r_play' },
+          { text: '"Not today."', go: 'r_pass' },
+        ],
+      },
+      root_loss_3: {
+        text: "[Waves you over immediately.]\n\nI need a favour. Small favour. The kind of favour that good friends do for each other automatically.\n\nYou know Rook at The Wreck? I'd like an introduction. You could tell her I'm well-regarded. I am well-regarded.\n\n[A beat.]\n\nIn certain contexts.\n\nPlay first, favour after. Same stakes as usual?",
+        options: [
+          { text: '"I\'ll think about Rook. Deal me in."', go: 'r_play',
+            flag: 'devlin_asked_favour', flagLabel: '🃏 Devlin wants an intro to Rook' },
+          { text: '"Not today, Devlin."', go: 'r_pass' },
+        ],
+      },
+
+      // ── Win-state greetings (player has won previously) ──
+      root_win_1: {
+        text: "You.\n\n[Pause.]\n\nI've been thinking about our last game. There are some irregularities I'd like to discuss. Primarily the draught.",
+        options: [
+          { text: '"There was no draught, Devlin."', go: 'r_no_draught' },
+          { text: '"Want to try again?"', go: 'r_play' },
+          { text: '[Leave him to it.]', go: null },
+        ],
+      },
+      r_no_draught: {
+        text: "[A long, dignified silence.]\n\nThat is a matter of professional disagreement. We will not resolve it here.\n\nDo you want to play or not.",
+        options: [
+          { text: '"Yes."', go: 'r_play' },
+          { text: '"Not today."', go: 'r_pass' },
+        ],
+      },
+      root_win_2: {
+        text: "[Elaborate, performative pleasantness.]\n\nHow wonderful to see you. You're looking well. That's a nice ship. How are things going.\n\n[Each sentence delivered with the warmth of a man defusing a bomb inside himself.]\n\nWould you like to play again.",
+        options: [
+          { text: '"Sure. Let\'s play."', go: 'r_play' },
+          { text: '"Maybe another time."', go: 'r_pass' },
+        ],
+      },
+      root_win_3: {
+        text: "I want it known that I don't bear grudges. Devlin Marsh does not bear grudges.\n\nI'm simply noting, for the record, that the record exists, and that I have it, and that it shows some irregular outcomes that have not yet been satisfactorily explained.\n\nGood to see you. Play again?",
+        options: [
+          { text: '"Sure."', go: 'r_play' },
+          { text: '"Take care, Devlin."', go: 'r_pass' },
+        ],
+      },
+
+      // ── Late-game payoff (player has grudge) ──
+      root_payoff_grudge: {
+        text: "[He's not at his table. He's standing. This is unusual.]\n\nI have information.\n\nI want it noted that I am providing this information as a person of integrity and not because of any ongoing... situation... between us regarding certain game outcomes. This is professional. This is me being professional.\n\n[A pause.]\n\nI may also want a small acknowledgment. Not an apology. I'm not asking for an apology. Just an acknowledgment that the atmospheric conditions at Meridian Cross are not always conducive to optimal performance and that this is a known variable.\n\n[He looks at you.]\n\nTwo Combine agents were asking about your ship at the Vantage approach corridor. Very polished. Very specific questions. They mentioned Edda Vance by name.\n\nI happened to overhear. I happen to overhear a lot. Nobody pays attention to a man who is known for talking about himself.\n\n[Another pause.]\n\nThat information is worth something. I'm not charging you for it. I'm providing it freely. As a person of integrity. I'd like that noted.",
+        options: [
+          { text: '"Thank you, Devlin. Genuinely."', go: 'r_payoff_thanks' },
+          { text: '"What do you want, Devlin?"', go: 'r_payoff_what' },
+          { text: '[Say nothing. Wait.]', go: 'r_payoff_silent' },
+        ],
+      },
+      r_payoff_thanks: {
+        text: "[His expression does something complicated.]\n\nRight. Good. Yes. Well.\n\n[A long pause.]\n\nThe draught was real, you know. I'm not saying it changed anything. I'm saying it was real.\n\n[He nods. Walks away. Probably to his table. Maybe somewhere else. Hard to say.]",
+        options: [{ text: '[Leave.]', go: null,
+          flag: 'devlin_grudge_resolved', flagLabel: '🃏 Devlin: grudge softened',
+          frontierDelta: 3 }],
+      },
+      r_payoff_what: {
+        text: "I want—\n\n[He stops himself.]\n\nNothing. I want nothing. I want you to know that I am capable of wanting nothing and choosing to help anyway. Some people are like that. I am one of those people.\n\n[He clearly wanted something.]\n\nWatch the Vantage approach.",
+        options: [{ text: '[Nod. Leave.]', go: null }],
+      },
+      r_payoff_silent: {
+        text: "[He holds your gaze for a moment.]\n\n...you're doing that on purpose.\n\n[He tells you anyway. The information is the same. He leaves slightly faster than he meant to.]",
+        options: [{ text: '[Leave.]', go: null }],
+      },
+
+      // ── Late-game payoff (player owes Devlin / he's the friend) ──
+      root_payoff_friendship: {
+        text: "[He looks pleased. More pleased than usual. This is concerning.]\n\nFinal game. You and me. Proper stakes.\n\nI've been studying your patterns. I know what you're going to pick. I've known for three games. I've been building to this. This is my moment.\n\n[He sets down a very specific amount of credits — enough to matter, not enough to be ruinous.]\n\nI want everything you're carrying. Or — and I know this sounds specific — I want you to tell Rook at The Wreck that I'm genuinely well-regarded.\n\nNot as a favour. As a factual statement. Because after I win this, I will genuinely be well-regarded. By you. Because you lost to me again. Peer recognition.",
+        options: [
+          { text: '[Play the final game.]', go: null, openGambling: true,
+            gamblingFinal: true },
+          { text: '"Not today, Devlin."', go: 'r_payoff_refuse' },
+        ],
+      },
+      r_payoff_refuse: {
+        text: "...\n\nRight.\n\n[He picks up the credits slowly.]\n\nRight.\n\nIf you change your mind. I'll be at my table.\n\n[He is always at his table.]\n\nGood luck with whatever you're doing.\n\n[Pause.]\n\nYou're going to win, aren't you. Whatever it is. You have the look. I can read people.\n\n[He goes back to his table.]",
+        options: [{ text: '[Leave.]', go: null }],
+      },
+
+      // ── Game-complete coda ──
+      root_coda: {
+        text: "[Devlin is at his table. Someone else is sitting with him. Listening.]\n\n[He sees you. He nods once. Doesn't stand. Doesn't call out. Just nods.]\n\n[Then he turns back to whoever is with him and continues talking.]\n\n[You catch one phrase as you pass:]\n\n\"—and the thing about Stone, Blade, Cloth is that it's not about the hand you show, it's about the hand you don't show—\"\n\n[He is wrong about this in the context of the game he is describing. He may not be wrong about it in general. It's hard to tell with Devlin Marsh.]",
+        options: [{ text: '[Walk on.]', go: null }],
+      },
+    },
+  },
+
   yusuf: {
     id: 'yusuf',
     name: 'Yusuf',
@@ -1679,8 +1862,14 @@ export const NPCS = {
           { text: '"Are there charts in this place that aren\'t on the manifest?"', go: 'r_charts' },
           { text: '"Anything specific you\'ve noticed about my arrival?"', go: 'r_arrival' },
           { text: '"How\'s Otto?"', go: 'r_otto' },
+          { text: '"Has Marsh been in?"', go: 'r_marsh',
+            requireMinPlayerWinsVsDevlin: 2 },
           { text: '[Drink.]', go: null },
         ],
+      },
+      r_marsh: {
+        text: "Marsh was in last night. Three hours.\n\nSame story seventeen times with minor variations. The variations were getting larger. By the end there was a structural integrity issue with the table that he felt had materially affected the outcome.\n\nI let him talk. It was slow.\n\nHe's not a bad person. He's a specific kind of person.",
+        options: [{ text: '[Drink.]', go: null }],
       },
       r_charts: {
         text: "[A long, considering look.]\n\nThere's a Chart Room three doors down. The proprietor doesn't take walk-ins. She takes referrals.\n\nI'm referring you. Don't make me regret it.",
@@ -1734,6 +1923,8 @@ export const NPCS = {
           { text: '"Am I being tracked?"', go: 'r_tracked' },
           { text: '"What are the odds the Combine\'s lying about something?"', go: 'r_combine' },
           { text: '"Why is your record-keeping more valuable than your book?"', go: 'r_records' },
+          { text: '"What are people saying about me?"', go: 'r_devlin',
+            requireMinPlayerWinsVsDevlin: 1 },
           { text: '[Leave.]', go: null },
         ],
       },
@@ -1779,6 +1970,13 @@ export const NPCS = {
       r_owe: {
         text: "Nothing. The first hand is free. Yusuf sent you, which means I owe you a courtesy. The next hand: information for information.\n\nCome back when you've got something to trade.",
         options: [{ text: '[Leave.]', go: null }],
+      },
+      r_devlin: {
+        text: "Someone's been talking about you. Marsh. The gambler. He has a detailed account of a game of Stone, Blade, Cloth — his version of events features an unusual amount of atmospheric interference.\n\nI don't believe him. Nobody does. I've adjusted your odds slightly anyway. In your favour, actually — anyone who beats Marsh and has him this bothered is clearly paying attention.\n\nHe's beaten you, hasn't he?",
+        options: [
+          { text: '"Marsh has been talking?"', go: null },
+          { text: '[Nod. Leave.]', go: null },
+        ],
       },
     },
   },

@@ -1,7 +1,7 @@
 import { makeInitialArc7 } from './arc7.js'
 
 export const SAVE_KEY = 'lr_save_v1'
-export const SAVE_VERSION = 4
+export const SAVE_VERSION = 5
 
 // Migrate older saves into the current shape. Returns the migrated state, or
 // null if the save is too old / unrecognised to recover.
@@ -35,6 +35,25 @@ function migrate(parsed) {
     next = { ...next }
     if (!next.arc7) next.arc7 = makeInitialArc7()
     v = 4
+  }
+
+  if (v === 4) {
+    // v4 → v5: Devlin Marsh stats + ephemeral gambling slot.
+    next = { ...next }
+    if (!next.devlin) {
+      next.devlin = {
+        gamesPlayed: 0,
+        playerWins: 0,
+        devlinWins: 0,
+        grudgeLevel: 0,
+        friendshipLevel: 0,
+        finalGamePlayed: false,
+        finalGameOutcome: null,
+        reappearedFlag: false,
+      }
+    }
+    if (next.gambling === undefined) next.gambling = null
+    v = 5
   }
 
   if (v !== SAVE_VERSION) return null

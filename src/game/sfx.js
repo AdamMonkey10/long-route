@@ -106,6 +106,22 @@ export const SFX = {
       setTimeout(() => sweep(f, f * 1.4, 0.15, 0.1, 'sine'), i * 70),
     )
   },
+  winRound() {
+    sweep(620, 780, 0.16, 0.14, 'sine')
+    setTimeout(() => sweep(820, 980, 0.18, 0.12, 'sine'), 100)
+  },
+  loseRound() {
+    sweep(440, 220, 0.32, 0.16, 'sine')
+  },
+  devlinWins() {
+    [523, 659, 784, 988, 1175, 988, 1175].forEach((f, i) =>
+      setTimeout(() => sweep(f, f * 1.25, 0.22, 0.12, 'square'), i * 110),
+    )
+  },
+  devlinLoses() {
+    sweep(220, 80, 0.7, 0.18, 'sawtooth')
+    setTimeout(() => noise(0.25, 0.08, 180), 350)
+  },
   isMuted() {
     return muted
   },

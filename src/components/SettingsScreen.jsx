@@ -336,7 +336,7 @@ export function SettingsScreen({ state, dispatch, onNewGame, savedAt }) {
       </div>
 
       <div style={{ color: 'var(--text-ghost)', fontSize: 10, textAlign: 'center', marginTop: 14 }}>
-        v3.8 · The Compendium · {Object.keys(SYSTEMS).length} systems · DON&apos;T GET LOST.
+        v3.9 · Stone, Blade, Cloth · {Object.keys(SYSTEMS).length} systems · DON&apos;T GET LOST.
       </div>
     </div>
   )

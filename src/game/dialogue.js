@@ -40,6 +40,12 @@ export function matchPredicate(state, p, npcId) {
   if (p.requireMinInesTrust !== undefined && it < p.requireMinInesTrust) return false
   if (p.requireMaxInesTrust !== undefined && it > p.requireMaxInesTrust) return false
 
+  // Devlin Marsh game record
+  const dPlayerWins = state.devlin?.playerWins || 0
+  const dDevlinWins = state.devlin?.devlinWins || 0
+  if (p.requireMinPlayerWinsVsDevlin !== undefined && dPlayerWins < p.requireMinPlayerWinsVsDevlin) return false
+  if (p.requireMinDevlinWinsVsPlayer !== undefined && dDevlinWins < p.requireMinDevlinWinsVsPlayer) return false
+
   return true
 }
 

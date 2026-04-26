@@ -107,6 +107,71 @@ function baseReducer(state, action) {
     case 'GOTO_SHIP_LOG':
       return { ...state, view: 'shiplog' }
 
+    case 'OPEN_GAMBLING': {
+      // Initial gambling sub-state. The mini-game manages most of its own
+      // state internally; CLOSE_GAMBLING commits the outcome.
+      return {
+        ...state,
+        view: 'gambling',
+        gambling: { isFinal: !!action.isFinal },
+      }
+    }
+
+    case 'CLOSE_GAMBLING': {
+      // action.outcome: { winner: 'player' | 'devlin' | 'none', stake: { kind, amount } }
+      // 'none' means the player walked away from the table without playing.
+      let ns = {
+        ...state,
+        view: 'dialogue',
+        gambling: null,
+      }
+      const out = action.outcome
+      if (out && out.winner !== 'none') {
+        const dev = ns.devlin || {}
+        const playerWon = out.winner === 'player'
+        const amount = out.stake?.amount || 0
+
+        // Settle credits.
+        if (amount > 0) {
+          ns.credits = playerWon ? state.credits + amount : Math.max(0, state.credits - amount)
+        }
+
+        // Update Devlin's permanent record.
+        ns.devlin = {
+          ...dev,
+          gamesPlayed: (dev.gamesPlayed || 0) + 1,
+          playerWins: (dev.playerWins || 0) + (playerWon ? 1 : 0),
+          devlinWins: (dev.devlinWins || 0) + (playerWon ? 0 : 1),
+          grudgeLevel: (dev.grudgeLevel || 0) + (playerWon ? 1 : 0),
+          friendshipLevel: (dev.friendshipLevel || 0) + (playerWon ? 0 : 1),
+        }
+
+        // Final game outcome — sticks both flags; Devlin's payoff dialogue
+        // routes to a different state next time.
+        if (action.outcome.isFinal) {
+          ns.devlin.finalGamePlayed = true
+          ns.devlin.finalGameOutcome = playerWon ? 'player' : 'devlin'
+          if (playerWon) {
+            ns.flags = { ...ns.flags, devlin_final_loss: true, devlin_friendship_resolved: true }
+          } else {
+            ns.flags = { ...ns.flags, devlin_final_win: true, devlin_friendship_resolved: true }
+          }
+        }
+
+        // Information stake — small frontier nudge for hearing him out
+        // and a flavour log entry the player can find later.
+        if (out.stake?.kind === 'info' && playerWon) {
+          ns.flags = { ...ns.flags, devlin_info_received: true }
+        }
+
+        const verb = playerWon ? 'won' : 'lost'
+        ns.gameLog = prepend(`Stone, Blade, Cloth: ${verb} vs Devlin Marsh${amount ? ` for ${amount}cr` : ''}.`, ns.gameLog)
+      } else {
+        ns.gameLog = prepend("Walked away from Devlin Marsh's table.", ns.gameLog)
+      }
+      return ns
+    }
+
     case 'SEARCH_CABIN': {
       if (state.flags?.compartment_opened) return state
       const flags = {
@@ -435,10 +500,36 @@ function baseReducer(state, action) {
       const npc = action.npc
       const npcId = action.npcId
       const visits = (state.npcVisits?.[npcId] || 0) + 1
-      const staged = {
+      let staged = {
         ...state,
         npcVisits: { ...state.npcVisits, [npcId]: visits },
       }
+
+      // Devlin's late-game payoff trigger. If the conditions are met, set
+      // the right flag BEFORE entry routing so the right node fires.
+      if (npcId === 'devlin') {
+        const dev = staged.devlin || {}
+        const arc7Jumps = staged.arc7?.jumpCount || 0
+        const eligible = !!staged.flags?.truth_revealed || arc7Jumps > 25
+        const playerAhead = (dev.playerWins || 0) > (dev.devlinWins || 0)
+        const devlinAhead = (dev.devlinWins || 0) > (dev.playerWins || 0)
+        if (eligible && !dev.reappearedFlag) {
+          if (playerAhead && !staged.flags?.devlin_grudge_resolved) {
+            staged = {
+              ...staged,
+              flags: { ...staged.flags, devlin_payoff_grudge: true },
+              devlin: { ...dev, reappearedFlag: true },
+            }
+          } else if (devlinAhead && !staged.flags?.devlin_friendship_resolved) {
+            staged = {
+              ...staged,
+              flags: { ...staged.flags, devlin_payoff_friendship: true },
+              devlin: { ...dev, reappearedFlag: true },
+            }
+          }
+        }
+      }
+
       const startNode = pickEntryNode(staged, npc, npcId)
       const root = npc?.tree?.[startNode]
       let ns = {
@@ -495,6 +586,15 @@ function baseReducer(state, action) {
       // Cartographer's back-routes apply a permanent +20% fuel reduction.
       if (opt.flag === 'cartographer_charts') {
         ns = { ...ns, fuelMod: (ns.fuelMod || 0) + 0.2 }
+      }
+      // Devlin's "[Sit down at the table]" dispatches into the gambling view.
+      if (opt.openGambling) {
+        return {
+          ...ns,
+          view: 'gambling',
+          gambling: { isFinal: !!opt.gamblingFinal },
+          dialogue: null,
+        }
       }
       if (opt.giveItem === 'data_core') {
         ns.flags = { ...ns.flags, has_data_core: true }

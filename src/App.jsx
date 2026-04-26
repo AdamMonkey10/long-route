@@ -15,6 +15,7 @@ import { LedgerScreen } from './components/LedgerScreen.jsx'
 import { SettingsScreen } from './components/SettingsScreen.jsx'
 import { ShipLogScreen } from './components/ShipLogScreen.jsx'
 import { Arc7Panel } from './components/Arc7Panel.jsx'
+import { StoneBladeCloth } from './components/StoneBladeCloth.jsx'
 import { Notification } from './components/Notification.jsx'
 
 function init() {
@@ -127,6 +128,9 @@ export default function App() {
             )}
             {state.view === 'shiplog' && (
               <ShipLogScreen state={state} dispatch={wrappedDispatch} />
+            )}
+            {state.view === 'gambling' && (
+              <StoneBladeCloth state={state} dispatch={wrappedDispatch} />
             )}
           </div>
           <Arc7Panel state={state} dispatch={wrappedDispatch} />

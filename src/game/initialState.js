@@ -45,5 +45,16 @@ export function makeInitialState() {
     ],
     notification: null,
     arc7: makeInitialArc7(),
+    devlin: {
+      gamesPlayed: 0,
+      playerWins: 0,
+      devlinWins: 0,
+      grudgeLevel: 0,
+      friendshipLevel: 0,
+      finalGamePlayed: false,
+      finalGameOutcome: null,
+      reappearedFlag: false,
+    },
+    gambling: null,
   }
 }

@@ -46,4 +46,5 @@ export const PORTRAIT_DATA = {
   cartographer: { bg: '#0a1020', face: '#b09080', hair: '#7a6050', eye: '#60c080', exp: 'sharp' },
   hadley: { bg: '#0a1020', face: '#c0b090', hair: '#a0a0a0', eye: '#7090c0', exp: 'sharp' },
   brennan: { bg: '#0a1010', face: '#a08060', hair: '#3a3030', eye: '#80a060', exp: 'gaunt' },
+  devlin: { bg: '#1a1000', face: '#c09060', hair: '#302010', eye: '#c08020', exp: 'jolly' },
 }
