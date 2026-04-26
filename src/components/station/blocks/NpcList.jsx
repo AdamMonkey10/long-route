@@ -15,7 +15,7 @@ export function NpcList({ state, dispatch, npcIds, dense = false }) {
             key={npc.id}
             onClick={() => {
               SFX.click()
-              dispatch({ type: 'START_DIALOGUE', npcId: npc.id })
+              dispatch({ type: 'START_DIALOGUE', npcId: npc.id, npc })
             }}
             style={{
               width: '100%',

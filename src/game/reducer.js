@@ -304,13 +304,26 @@ export function reducer(state, action) {
       return { ...ns, gameLog: log }
     }
 
-    case 'START_DIALOGUE':
+    case 'START_DIALOGUE': {
+      // Pick a starting node from the NPC's `entry` table, falling back to
+      // 'root'. Each entry can require/forbid flags for multi-visit NPCs.
+      const npc = action.npc
+      let startNode = 'root'
+      if (npc?.entry) {
+        for (const e of npc.entry) {
+          if (e.requireFlag && !state.flags[e.requireFlag]) continue
+          if (e.requireNotFlag && state.flags[e.requireNotFlag]) continue
+          startNode = e.node
+          break
+        }
+      }
       return {
         ...state,
         view: 'dialogue',
-        dialogue: { npcId: action.npcId, nodeId: 'root' },
+        dialogue: { npcId: action.npcId, nodeId: startNode },
         npcSeen: { ...state.npcSeen, [action.npcId]: true },
       }
+    }
 
     case 'CHOOSE_OPTION': {
       const opt = action.option

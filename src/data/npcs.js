@@ -836,6 +836,302 @@ export const NPCS = {
       },
     },
   },
+  yolanda: {
+    id: 'yolanda',
+    name: 'Yolanda Fitch',
+    title: 'Customs Agent',
+    portrait: 'yolanda',
+    greeting: "Manifest, registration, port of last call. In that order. The queue's behind you.",
+    entry: [
+      { requireFlag: 'yolanda_thaw', node: 'root_thawed' },
+      { requireFlag: 'yolanda_seen', node: 'root_second' },
+      { node: 'root' },
+    ],
+    tree: {
+      root: {
+        text: "Welcome to Portsmith. Persistent Delusion — flagged for routine secondary checks. This is normal. It is also tedious.\n\n[She processes your paperwork at the speed of someone who has done this 11,000 times.]\n\nYou're cleared. Proceed.",
+        options: [
+          { text: "What are the secondary checks for?", go: 'first_secondary', flag: 'yolanda_seen' },
+          { text: "Thanks.", go: null, flag: 'yolanda_seen' },
+        ],
+      },
+      first_secondary: {
+        text: "Standard procedure for vessels with prior administrative queries. Yours has several. I am not authorised to discuss them.\n\n[She doesn't look up.]",
+        options: [{ text: "Right.", go: null }],
+      },
+
+      root_second: {
+        text: "Persistent Delusion. Again. Hello.\n\n[She processes your forms with the air of someone who could write them with her eyes closed.]\n\nThis section is faster than usual. Don't tell my supervisor.",
+        options: [
+          { text: "Long shift?", go: 'second_chitchat' },
+          { text: "Anything new on the file?", go: 'second_file' },
+          { text: "Thanks.", go: null },
+        ],
+      },
+      second_chitchat: {
+        text: "Twelve hours on, four hours off. The ratio is illegal in three jurisdictions. Combine licensing is not one of them.\n\n[A pause.]\n\nDon't say I said that.",
+        options: [
+          { text: "Your secret's safe.", go: 'second_break', flag: 'yolanda_thaw', flagLabel: '🤝 Yolanda lets her guard down' },
+          { text: "I'll keep moving.", go: null },
+        ],
+      },
+      second_break: {
+        text: "[A small smile, very fast.]\n\nNext time — bring something other than freight to talk about. There are eight people on this concourse who have actual conversations. None of them work in this office.",
+        options: [{ text: "Noted.", go: null }],
+      },
+      second_file: {
+        text: "Nothing I can share. Officially.\n\n[She looks at the file. Then at you. Then back at the file.]\n\nIf I were to give advice — which I am not — someone is paying close attention to where this ship goes. But of course I'm not giving you that advice.",
+        options: [{ text: "Of course not.", go: null }],
+      },
+
+      root_thawed: {
+        text: "[She doesn't bother with the manifest this time.]\n\nYou're back. The queue can wait for once. What can I do for you, Captain?",
+        options: [
+          { text: "What have you been logging?", go: 'thawed_logs' },
+          { text: "What's the Combine flagging on me?", go: 'thawed_flags' },
+          { text: "How are you?", go: 'thawed_personal' },
+          { text: "Just checking in.", go: null },
+        ],
+      },
+      thawed_logs: {
+        text: "Officially? Customs declarations.\n\nUnofficially: I've been keeping a notebook. Three years of it. Anomalies in shipping data — manifests that don't match the cargo, duty receipts that don't reconcile, ships that should not have been here.\n\nIt's not nothing. I haven't decided what it is.",
+        options: [
+          { text: "Show me.", go: 'thawed_logs_share', flag: 'yolanda_logs', flagLabel: '📓 Yolanda\'s anomaly logs' },
+          { text: "Keep it safe.", go: null },
+        ],
+      },
+      thawed_logs_share: {
+        text: "[She slides a folded sheet across.]\n\nNot the whole thing. A summary. Names of ships, dates, and a cross-reference column you'll understand if you've been around.\n\nIf this matters to anyone you trust, it's yours. I copied it slowly so the office monitor wouldn't notice.",
+        options: [{ text: "It matters. Thank you.", go: null }],
+      },
+      thawed_flags: {
+        text: "[Lower voice.]\n\nYour ship is on a watch list. Not the public one. The other one. Combine Executive — three levels above me — has standing orders to be alerted when you dock.\n\nThe alert is informational, not enforcement. They want to know where you go. They are not, currently, telling anyone to stop you.\n\nThis suggests they want to follow you to something.",
+        options: [{ text: "I appreciate it.", go: null, flag: 'combine_attention', flagLabel: '👁 Combine is watching' }],
+      },
+      thawed_personal: {
+        text: "Bored. Underpaid. Furious in a quiet, professional way.\n\n[She gestures at the office.]\n\nFifteen years of this. It pays. It's secure. I can't decide if that's worse or better.\n\nDon't worry about me. The ship is more interesting than I am.",
+        options: [{ text: "Maybe not for long.", go: null }],
+      },
+    },
+  },
+
+  the_kid: {
+    id: 'the_kid',
+    name: 'The Kid',
+    title: 'Concourse Regular',
+    portrait: 'the_kid',
+    greeting: "You're new. New ships pay better.",
+    entry: [
+      { requireFlag: 'kid_edda', node: 'root_after_edda' },
+      { requireFlag: 'kid_met', node: 'root_known' },
+      { node: 'root' },
+    ],
+    tree: {
+      root: {
+        text: "I run errands. Fast. Cheap. Don't ask questions about the cargo, mister. Or miss. Or whatever.",
+        options: [
+          { text: "What's your name?", go: 'first_name' },
+          { text: "How old are you?", go: 'first_age' },
+          { text: "I don't need errands.", go: 'first_dismiss', flag: 'kid_met' },
+        ],
+      },
+      first_name: {
+        text: "Don't have one. Or, I do, but I'm not telling. The dock master called me 'Hey' for two years. It works.\n\nWhat's your ship called?",
+        options: [
+          { text: "Persistent Delusion.", go: 'first_ship' },
+          { text: "Why do you want to know?", go: 'first_curious' },
+        ],
+      },
+      first_ship: {
+        text: "[A small pause.]\n\nThat's a good name.\n\n...\n\nGood luck, mister.",
+        options: [
+          { text: "You okay?", go: 'first_okay', flag: 'kid_met' },
+          { text: "Thanks.", go: null, flag: 'kid_met' },
+        ],
+      },
+      first_curious: {
+        text: "Just curious. Lots of ships come through. Some of them are interesting. Most aren't.",
+        options: [
+          { text: "Mine?", go: 'first_ship' },
+          { text: "I'll let you get on with it.", go: null, flag: 'kid_met' },
+        ],
+      },
+      first_okay: {
+        text: "I'm fine. Always fine. People who aren't fine don't last on Portsmith and I've been here forever. So. Fine.",
+        options: [{ text: "Take care.", go: null, flag: 'kid_met' }],
+      },
+      first_dismiss: {
+        text: "Suit yourself. I'll be here.",
+        options: [{ text: "I bet.", go: null }],
+      },
+      first_age: {
+        text: "Old enough.",
+        options: [{ text: "Right.", go: null, flag: 'kid_met' }],
+      },
+
+      root_known: {
+        text: "Hey, Persistent Delusion. Back again.\n\n[The kid sizes you up. They are very good at sizing people up.]\n\nYou're not running cargo. Not really. You're running... something. What?",
+        options: [
+          { text: "I'm trying to find someone.", go: 'known_find' },
+          { text: "I'm trading.", go: 'known_trade' },
+          { text: "It's complicated.", go: 'known_complicated' },
+        ],
+      },
+      known_trade: {
+        text: "Sure. Sure. Trader. Right. The trader who keeps coming back to ask the dock master about the previous owner.",
+        options: [
+          { text: "Maybe I'm trying to find someone.", go: 'known_find' },
+          { text: "Mind your business.", go: null },
+        ],
+      },
+      known_complicated: {
+        text: "Everyone says that. It's never as complicated as people think.",
+        options: [
+          { text: "I'm trying to find someone.", go: 'known_find' },
+          { text: "Maybe so.", go: null },
+        ],
+      },
+      known_find: {
+        text: "[The kid goes still.]\n\nWho?",
+        options: [
+          { text: "Edda Vance.", go: 'known_edda', flag: 'kid_edda', flagLabel: '🔍 The Kid remembers Edda' },
+        ],
+      },
+      known_edda: {
+        text: "[A long pause. The kid sits down, which they don't usually do.]\n\nShe used to give me food.\n\nLast time I saw her — three weeks before she went — she stopped right where you are. Pressed a credit chip into my hand. Said: 'If anyone asks where I went, tell them I went somewhere it'd take a person to find me.'\n\nI didn't get it for years. Then I figured it out. She wanted someone like you to come ask.",
+        options: [
+          { text: "Was that the last thing she said?", go: 'known_last' },
+          { text: "Thank you.", go: 'known_thanks' },
+        ],
+      },
+      known_last: {
+        text: "She also said: 'Tell them I'm sorry I didn't pay Grex.'\n\n[A very small smile.]\n\nShe knew people would come. She was making jokes at the door. That was Edda.",
+        options: [{ text: "I'll be back.", go: null }],
+      },
+      known_thanks: {
+        text: "[The kid shrugs.]\n\nDon't thank me. Find her.",
+        options: [{ text: "I will.", go: null }],
+      },
+
+      root_after_edda: {
+        text: "[The kid raises an eyebrow.]\n\nAny news?",
+        options: [
+          { text: "Still working on it.", go: 'after_working' },
+          { text: "Just stopping by.", go: null },
+        ],
+      },
+      after_working: {
+        text: "[A nod.]\n\nKeep working. I'll be here.",
+        options: [{ text: "Thanks, Kid.", go: null }],
+      },
+    },
+  },
+
+  rennick: {
+    id: 'rennick',
+    name: 'Rennick',
+    title: 'Retired Salvager',
+    portrait: 'rennick',
+    greeting: "...",
+    entry: [
+      { requireFlag: 'rennick_v3', node: 'root_v3' },
+      { requireFlag: 'rennick_v2', node: 'root_v2' },
+      { requireFlag: 'rennick_v1', node: 'root_v1' },
+      { node: 'root' },
+    ],
+    tree: {
+      root: {
+        text: "[An older man on the bench, watching nothing in particular. He doesn't look up as you approach.]\n\nMost people walk past.",
+        options: [
+          { text: "I'm not most people.", go: 'first_open' },
+          { text: "Sorry to bother you.", go: 'first_pass' },
+        ],
+      },
+      first_open: {
+        text: "[He glances at you. Looks back at the concourse.]\n\nMaybe. Maybe not. We'll see.\n\nWhat are you, then?",
+        options: [
+          { text: "A trader. New here.", go: 'first_trader', flag: 'rennick_v1' },
+          { text: "Just curious about you.", go: 'first_curious', flag: 'rennick_v1' },
+        ],
+      },
+      first_trader: {
+        text: "Trader. Right. Plenty of those.\n\nI used to be a salvager. Twenty years. Found things. Forgot some. Remember most.\n\n[He looks at his hands.]\n\nCome back tomorrow. If you do.",
+        options: [{ text: "I will.", go: null }],
+      },
+      first_curious: {
+        text: "[He makes a small noise that might be a laugh.]\n\nCurious people find things. Not always what they wanted to find.\n\n...come back tomorrow. If you remember.",
+        options: [{ text: "I will.", go: null }],
+      },
+      first_pass: {
+        text: "[He nods, fractionally.]",
+        options: [{ text: "[Walk away.]", go: null }],
+      },
+
+      root_v1: {
+        text: "[He's there. He's always there.]\n\nYou came back. Most don't.",
+        options: [
+          { text: "What did you do, before?", go: 'v1_history' },
+          { text: "What are you waiting for?", go: 'v1_waiting' },
+          { text: "I just like the bench.", go: 'v1_bench', flag: 'rennick_v2' },
+        ],
+      },
+      v1_history: {
+        text: "Salvage. Twenty years. Independent rigs, mostly — the ones that drift. Found a lot of dead ships. A few alive ones with dead crews. Two, three things I shouldn't have found.\n\nI stopped. Came here. Sit. Watch.\n\nAsk me again tomorrow.",
+        options: [{ text: "I will.", go: null }],
+      },
+      v1_waiting: {
+        text: "Someone to do something about what I found.\n\n[A pause.]\n\nMight be you. Might not. You're early to tell. Come back tomorrow.",
+        options: [{ text: "Tomorrow.", go: null }],
+      },
+      v1_bench: {
+        text: "[He looks at you properly for the first time.]\n\nThat's the right answer. Come back tomorrow and I'll tell you why.",
+        options: [{ text: "I will.", go: null }],
+      },
+
+      root_v2: {
+        text: "[He's smoking now. He wasn't, before.]\n\nThird time. That's persistence. Or stubbornness. Often the same.\n\nAlright. I'll tell you.",
+        options: [
+          { text: "Tell me.", go: 'v2_tell' },
+          { text: "Maybe later.", go: null },
+        ],
+      },
+      v2_tell: {
+        text: "Twenty years ago, salvaging in deep space. Off the registered routes. I was looking for a debris field someone had paid me to map.\n\nWhat I found instead was a station. Operational. Lights on. Combine military insignia. Running dark — no transponder, no comms.\n\nI did not announce myself. I do not know if I was seen. I left, very fast, and did not file the coordinates.\n\nIt's been there twenty years. It's still there. I check, sometimes.",
+        options: [
+          { text: "Where?", go: 'v2_where', flag: 'rennick_coords', flagLabel: '🗺 Rennick\'s coordinates' },
+          { text: "Why didn't you report it?", go: 'v2_why_not' },
+        ],
+      },
+      v2_where: {
+        text: "[He hands you a slip of paper. Coordinates, hand-written, exact.]\n\nDon't go alone. Don't go without a reason. Don't go at all, if you've got the sense.\n\nBut you might have the reason. So there it is.",
+        options: [{ text: "Thank you.", go: null, flag: 'rennick_v3' }],
+      },
+      v2_why_not: {
+        text: "Who would I report it to? The Combine? Whose station it isn't?\n\nI'm not stupid. I'm just old.",
+        options: [
+          { text: "Where is it?", go: 'v2_where', flag: 'rennick_coords', flagLabel: '🗺 Rennick\'s coordinates' },
+          { text: "Fair enough.", go: null, flag: 'rennick_v3' },
+        ],
+      },
+
+      root_v3: {
+        text: "[He nods at you, almost a friend.]\n\nYou're going somewhere with what I gave you. Or you're not. Either way, it's not my problem any more.",
+        options: [
+          { text: "Anything else I should know?", go: 'v3_more' },
+          { text: "Thanks for trusting me.", go: 'v3_thanks' },
+        ],
+      },
+      v3_thanks: {
+        text: "Don't thank me. Use it.\n\n...if you do, the bench will still be here. Come tell me how it went.",
+        options: [{ text: "I will.", go: null }],
+      },
+      v3_more: {
+        text: "There's a cartographer at Meridian who buys system locations like that one. She's been looking for it for years. If you don't go yourself, sell it to her. She'll know what to do.\n\nThat's all. I'm out of stories.",
+        options: [{ text: "Understood.", go: null }],
+      },
+    },
+  },
+
   edda: {
     id: 'edda',
     name: 'Edda Vance',

@@ -27,4 +27,7 @@ export const PORTRAIT_DATA = {
   rook: { bg: '#1a0800', face: '#c07040', hair: '#300800', eye: '#ff8020', exp: 'jolly' },
   motes: { bg: '#0a0a0a', face: '#808070', hair: '#302820', eye: '#6080a0', exp: 'gaunt' },
   edda: { bg: '#081018', face: '#a09080', hair: '#404850', eye: '#60c0a0', exp: 'knowing' },
+  yolanda: { bg: '#14202a', face: '#b08070', hair: '#604030', eye: '#7090b0', exp: 'tired' },
+  the_kid: { bg: '#0a1818', face: '#8a6a50', hair: '#403020', eye: '#80c0a0', exp: 'wide' },
+  rennick: { bg: '#0a0a0a', face: '#807060', hair: '#a0a0a0', eye: '#5070a0', exp: 'gaunt' },
 }
